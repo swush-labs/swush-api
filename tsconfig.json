@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"target": "es2020",                      // Modern JavaScript target
+		"module": "commonjs",                   // Compatible with Node.js
+		"lib": ["es2020", "dom"],               // ES2020 features and DOM types
+		"allowJs": true,                        // Allow using JavaScript files
+		"outDir": "build",                      // Output directory for compiled files
+		"rootDir": "src",                       // Root directory for source files
+		
+		// Basic TypeScript safety checks
+		"strict": false,                        // Turn off strict mode (umbrella setting)
+		"noImplicitAny": false,                 // Allow variables with implicit "any" type
+		"strictNullChecks": false,              // Allow null and undefined in any type
+		"strictFunctionTypes": false,           // Allow more flexible function types
+		"strictPropertyInitialization": false, // Relax property initialization rules
+		"noImplicitThis": false,                // Allow "this" to be implicitly any
+
+		// Dependency resolution
+		"allowSyntheticDefaultImports": true,  // Allow default imports from modules
+		"esModuleInterop": true,               // Improve compatibility with CommonJS modules
+		"resolveJsonModule": true,             // Allow importing JSON files
+		"experimentalDecorators": true         // Enable support for decorators
+	},
+	"include": ["src"],                        // Files to include in the project
+	"exclude": ["node_modules", "build"]      // Exclude unnecessary directories
+}

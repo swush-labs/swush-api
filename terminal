@@ -1,0 +1,3 @@
+mkdir dex-aggregator-service
+cd dex-aggregator-service
+npm init -y 
