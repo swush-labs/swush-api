@@ -9,7 +9,9 @@ export interface AssetsInfo {
 export interface ForeignAssetsData {
 	symbol: string;
 	name: string;
-	multiLocation: string;
+	multiLocation: UnionXcmMultiLocation;
+    assetHubReserveLocation: UnionXcmMultiLocation;
+    originChainReserveLocation: UnionXcmMultiLocation;
 }
 
 export interface ForeignAssetsInfo {

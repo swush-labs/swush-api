@@ -1,5 +1,4 @@
-import type { AnyJson } from '@polkadot/types/types';
-
+		
 export type XcAssets = {
 	polkadot: XcAssetsInfo[];
 	kusama: XcAssetsInfo[];
@@ -10,34 +9,21 @@ export type XcAssetsInfo = {
 	paraID: number;
 	id: string;
 	xcAssetCnt: string;
-	data: XcAssetsData[];
+	data: AssetData[];
 };
 
-export type XcAssetsData = {
-	paraID: number;
-	relayChain: string;
-	nativeChainID: string | null;
-	symbol: string;
-	decimals: number;
-	interiorType: string;
-	xcmV1Standardized: (XcAssetXcmStandardized | string)[];
-	xcmV1MultiLocation: AnyJson;
-	asset: Object | string;
-	source: string[];
-	xcmV1MultiLocationByte?: `0x${string}`;
-};
+export type AssetData = {
+    asset: Asset;
+    name: string;
+    symbol: string;
+    decimals: number;
+    xcmInteriorKey?: string; // Optional as it is not in all objects
+    inferred?: boolean; // Optional as it is not in all objects
+    confidence?: number; // Optional as it is not in all objects
+    currencyID?: string; // Optional as it is not in all objects
+}
 
-export type SanitizedXcAssetsData = {
-	paraID: number;
-	nativeChainID: string | null;
-	symbol: string;
-	decimals: number;
-	xcmV1MultiLocation: string;
-	asset: Object | string;
-	assetHubReserveLocation: string;
-	originChainReserveLocation?: string | undefined;
-};
+export type Asset = {
+    Token: string;
+}
 
-export type XcAssetXcmStandardized = {
-	[x: string]: string | number | undefined;
-};
