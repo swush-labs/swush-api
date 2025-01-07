@@ -1,15 +1,27 @@
 //fetch xcAssets and check if type is correct
 
-import { XcAssets } from "../services/registry/types-xcassets";
-import { fetchXcAssetData } from "../services/registry/XCMRegistry";
+import { fetchXcAssetData} from '../services/registry/XCMRegistry';
+import { getAllCachedCurrencyIds, getAssetByCurrencyId } from '../services/assets/currency';
 
-
-// add a main function
 async function main() {
-    const xcAssets = await fetchXcAssetData();
-    //print into a file
-    const fs = require('fs');
-    fs.writeFileSync('xcAssets.json', JSON.stringify(xcAssets, null, 2));
+    // Initialize the cache
+    await fetchXcAssetData();
+    
+    // Get all available currency IDs
+    const currencyIds = getAllCachedCurrencyIds();
+    console.log('Available currency IDs:', currencyIds);
+    
+    // Look up a specific asset
+    const currencyId = currencyIds[0]; // example
+    const asset = getAssetByCurrencyId(currencyId);
+    if (asset) {
+        console.log('Found asset:', {
+            name: asset.name,
+            symbol: asset.symbol,
+            decimals: asset.decimals,
+            currencyID: asset.currencyID
+        });
+    }
 }
 
-main();
+main().catch(console.error);

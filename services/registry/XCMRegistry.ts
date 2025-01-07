@@ -1,19 +1,15 @@
 import {ChainInfoRegistry, ChainInfoKeys} from './types-xcm';
 import {XcAssets, AssetData} from './types-xcassets';
 import {
-    ASSET_TRANSFER_API_XCM_REGISTRY_URL,
-    XC_ASSET_CDN_URL
+    PARITY_XCM_REGISTRY_URL,
+    COLORFULNOTION_XCM_GLOBAL_REGISTRY_URL,
+    CACHE_KEYS,
 } from '../constants';
 import CacheManager from '../cache/CacheManager';
 
-const CACHE_KEYS = {
-    XCM_REGISTRY: 'xcm_registry',
-    XC_ASSETS: 'xc_assets',
-    XC_ASSETS_LOOKUP: 'xc_assets_lookup'
-};
 
 // Add type for the lookup cache
-type AssetLookupCache = {
+export type AssetLookupCache = {
     [currencyId: string]: AssetData;
 };
 
@@ -37,7 +33,7 @@ function createAssetLookup(xcAssets: XcAssets): AssetLookupCache {
 
 export async function initializeRegistry() {
     const cacheManager = CacheManager.getInstance();
-    const cachedRegistry = cacheManager.get(CACHE_KEYS.XCM_REGISTRY);
+    const cachedRegistry = cacheManager.get(CACHE_KEYS.PARITY_XCM_REGISTRY);
     
     if (cachedRegistry) {
         return cachedRegistry;
@@ -45,11 +41,11 @@ export async function initializeRegistry() {
 
     let data;
     try {
-        data = await fetch(ASSET_TRANSFER_API_XCM_REGISTRY_URL);
+        data = await fetch(PARITY_XCM_REGISTRY_URL);
         const fetchedRegistry = (await data.json()) as ChainInfoRegistry<ChainInfoKeys>;
         
         // Cache the fetched registry
-        cacheManager.set(CACHE_KEYS.XCM_REGISTRY, fetchedRegistry);
+        cacheManager.set(CACHE_KEYS.PARITY_XCM_REGISTRY, fetchedRegistry);
         
         return fetchedRegistry;
     } catch (e) {
@@ -59,25 +55,26 @@ export async function initializeRegistry() {
     }
 }
 
+// TODO: initialize XC assets lookup cache first
 export async function fetchXcAssetData(): Promise<{ xcAssets: XcAssets }> {
     const cacheManager = CacheManager.getInstance();
-    const cachedAssets = cacheManager.get(CACHE_KEYS.XC_ASSETS);
+    const cachedAssets = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY);
     
     if (cachedAssets) {
         return cachedAssets;
     }
 
     try {
-        const xcAssetsRegistry = (await (await fetch(XC_ASSET_CDN_URL)).json()) as {
+        const xcAssetsRegistry = (await (await fetch(COLORFULNOTION_XCM_GLOBAL_REGISTRY_URL)).json()) as {
             xcAssets: XcAssets;
         };
         
         // Cache the fetched XC assets
-        cacheManager.set(CACHE_KEYS.XC_ASSETS, xcAssetsRegistry);
+        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY, xcAssetsRegistry);
         
         // Create and cache the lookup
         const assetLookup = createAssetLookup(xcAssetsRegistry.xcAssets);
-        cacheManager.set(CACHE_KEYS.XC_ASSETS_LOOKUP, assetLookup);
+        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_ASSETS, assetLookup);
         
         return xcAssetsRegistry;
     } catch (e) {
@@ -86,27 +83,3 @@ export async function fetchXcAssetData(): Promise<{ xcAssets: XcAssets }> {
         );
     }
 };
-
-// Add helper function to get asset by currency ID
-export function getAssetByCurrencyId(currencyId: string): AssetData | undefined {
-    const cacheManager = CacheManager.getInstance();
-    const lookupCache = cacheManager.get(CACHE_KEYS.XC_ASSETS_LOOKUP) as AssetLookupCache;
-    
-    if (!lookupCache) {
-        throw new Error('Asset lookup cache not initialized');
-    }
-    
-    return lookupCache[currencyId];
-}
-
-// Add helper function to get all cached currency IDs
-export function getAllCachedCurrencyIds(): string[] {
-    const cacheManager = CacheManager.getInstance();
-    const lookupCache = cacheManager.get(CACHE_KEYS.XC_ASSETS_LOOKUP) as AssetLookupCache;
-    
-    if (!lookupCache) {
-        throw new Error('Asset lookup cache not initialized');
-    }
-    
-    return Object.keys(lookupCache);
-}
