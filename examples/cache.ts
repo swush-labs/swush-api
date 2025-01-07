@@ -1,6 +1,6 @@
 //write a cache manager with main and sub cache
 
-import CacheManager from "./services/CacheManager";
+import CacheManager from "../services/cache/CacheManager";
 
 function main() {
     const cache = CacheManager.getInstance();

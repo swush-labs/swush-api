@@ -1,5 +1,5 @@
 // pages/api/initialize.ts
-import DataFetcher from './services/DataFetcher';
+import DataFetcher from './services/network/DataFetcher';
 
 async function main() { 
 const RPC_URL = 'wss://rpc.polkadot.io';

@@ -1,6 +1,6 @@
-import RpcConnection from './services/RpcConnection';
-import DataFetcher from './services/DataFetcher';
-import CacheManager from './services/CacheManager';
+import RpcConnection from '../services/network/RpcConnection';
+import DataFetcher from '../services/network/DataFetcher';
+import CacheManager from '../services/cache/CacheManager';
 
 // Constants
 const RPC_URL = 'wss://rpc.polkadot.io';
