@@ -1,32 +1,22 @@
 //write a cache manager with main and sub cache
 
-import CacheManager from "../services/cache/CacheManager";
+import { CacheService } from '../services/cache/CacheService';
 
-function main() {
-    const cache = CacheManager.getInstance();
-    // Define a nested object structure
-    const nestedData = {
-        id: 'nested1',
-        metadata: {
-            tokens: [
-                { name: 'TokenA', amount: 100 },
-                { name: 'TokenB', amount: 200 },
-            ],
-        },
-        update: () => {
-            console.log('Update function called!');
-        },
-    };
+async function main() {
+    const rpcUrl = 'wss://your-rpc-endpoint';
+    const cacheService = CacheService.getInstance(rpcUrl);
 
-    // Store the nested data
-    cache.set('nestedKey', nestedData);
-    // Retrieve and use the nested data
-    const retrievedNestedData = cache.get('nestedKey');
-    if (retrievedNestedData) {
-        console.log(retrievedNestedData.metadata.tokens); // Output: [{ name: 'TokenA', amount: 100 }, { name: 'TokenB', amount: 200 }]
-        retrievedNestedData.update(); // Output: Update function called!
-    }
+    // Initialize all caches first
+    await cacheService.initializeAllCaches();
 
+    // Start automatic cache refresh
+    cacheService.startCacheRefresh();
+
+    // To stop cache refresh (when needed)
+    // cacheService.stopCacheRefresh();
+
+    // To clear all caches (when needed)
+    // cacheService.clearAllCaches();
 }
 
-main();
+main().catch(console.error);
