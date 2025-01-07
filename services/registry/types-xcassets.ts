@@ -1,6 +1,5 @@
 import type { AnyJson } from '@polkadot/types/types';
 
-
 export type XcAssets = {
 	polkadot: XcAssetsInfo[];
 	kusama: XcAssetsInfo[];

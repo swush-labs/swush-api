@@ -1,5 +1,5 @@
-import {ChainInfoRegistry, ChainInfoKeys} from '@substrate/asset-transfer-api/lib/src/registry/types';
-import {XcAssets} from './types';
+import {ChainInfoRegistry, ChainInfoKeys} from './types-xcm';
+import {XcAssets} from './types-xcassets';
 import {
     ASSET_TRANSFER_API_XCM_REGISTRY_URL,
     XC_ASSET_CDN_URL
