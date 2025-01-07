@@ -1,6 +1,6 @@
 // services/DataFetcher.ts
 import RpcConnection from './RpcConnection';
-import CacheManager from './CacheManager';
+import CacheManager from '../cache/CacheManager';
 
 class DataFetcher {
   private rpcUrl: string;
