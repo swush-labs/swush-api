@@ -1,0 +1,2 @@
+export const ASSET_TRANSFER_API_XCM_REGISTRY_URL = 'https://paritytech.github.io/asset-transfer-api-registry/registry.json';
+export const XC_ASSET_CDN_URL = 'https://cdn.jsdelivr.net/gh/colorfulnotion/xcm-global-registry/metadata/xcmgar.json'; 
