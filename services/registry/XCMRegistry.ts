@@ -1,5 +1,5 @@
 import {ChainInfoRegistry, ChainInfoKeys} from './types-xcm';
-import {XcAssets} from './types-xcassets';
+import {XcAssets, AssetData} from './types-xcassets';
 import {
     ASSET_TRANSFER_API_XCM_REGISTRY_URL,
     XC_ASSET_CDN_URL
@@ -8,8 +8,32 @@ import CacheManager from '../cache/CacheManager';
 
 const CACHE_KEYS = {
     XCM_REGISTRY: 'xcm_registry',
-    XC_ASSETS: 'xc_assets'
+    XC_ASSETS: 'xc_assets',
+    XC_ASSETS_LOOKUP: 'xc_assets_lookup'
 };
+
+// Add type for the lookup cache
+type AssetLookupCache = {
+    [currencyId: string]: AssetData;
+};
+
+// Helper function to create lookup cache
+function createAssetLookup(xcAssets: XcAssets): AssetLookupCache {
+    const lookup: AssetLookupCache = {};
+    
+    // Process both Polkadot and Kusama assets
+    ['polkadot', 'kusama'].forEach(chain => {
+        xcAssets[chain as keyof XcAssets].forEach(xcAssetInfo => {
+            xcAssetInfo.data.forEach(assetData => {
+                if (assetData.currencyID) {
+                    lookup[assetData.currencyID] = assetData;
+                }
+            });
+        });
+    });
+    
+    return lookup;
+}
 
 export async function initializeRegistry() {
     const cacheManager = CacheManager.getInstance();
@@ -51,6 +75,10 @@ export async function fetchXcAssetData(): Promise<{ xcAssets: XcAssets }> {
         // Cache the fetched XC assets
         cacheManager.set(CACHE_KEYS.XC_ASSETS, xcAssetsRegistry);
         
+        // Create and cache the lookup
+        const assetLookup = createAssetLookup(xcAssetsRegistry.xcAssets);
+        cacheManager.set(CACHE_KEYS.XC_ASSETS_LOOKUP, assetLookup);
+        
         return xcAssetsRegistry;
     } catch (e) {
         throw new Error(
@@ -58,3 +86,27 @@ export async function fetchXcAssetData(): Promise<{ xcAssets: XcAssets }> {
         );
     }
 };
+
+// Add helper function to get asset by currency ID
+export function getAssetByCurrencyId(currencyId: string): AssetData | undefined {
+    const cacheManager = CacheManager.getInstance();
+    const lookupCache = cacheManager.get(CACHE_KEYS.XC_ASSETS_LOOKUP) as AssetLookupCache;
+    
+    if (!lookupCache) {
+        throw new Error('Asset lookup cache not initialized');
+    }
+    
+    return lookupCache[currencyId];
+}
+
+// Add helper function to get all cached currency IDs
+export function getAllCachedCurrencyIds(): string[] {
+    const cacheManager = CacheManager.getInstance();
+    const lookupCache = cacheManager.get(CACHE_KEYS.XC_ASSETS_LOOKUP) as AssetLookupCache;
+    
+    if (!lookupCache) {
+        throw new Error('Asset lookup cache not initialized');
+    }
+    
+    return Object.keys(lookupCache);
+}
