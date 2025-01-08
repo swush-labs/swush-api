@@ -16,7 +16,7 @@ export function getAssetByCurrencyId(currencyId: string): AssetData | undefined 
 }
 
 // Add helper function to get all cached currency IDs
-export function getAllCachedCurrencyIds(): string[] {
+export function getAllCachedCurrency(): any{
     const cacheManager = CacheManager.getInstance();
     const lookupCache = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY_AH_NATIVE_ASSETS) as AssetLookupCache;
     
@@ -24,5 +24,6 @@ export function getAllCachedCurrencyIds(): string[] {
         throw new Error('Asset lookup cache not initialized');
     }
     
-    return Object.keys(lookupCache);
+    // return all currencies
+    return lookupCache;
 }   
