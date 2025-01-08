@@ -83,7 +83,7 @@ export async function initializeRegistry() {
 
 
 // TODO: initialize XC assets lookup cache first
-export async function fetchXcAssetData(): Promise<{ xcAssets: Assets } | undefined> {
+export async function fetchXcAssetData(){
     const cacheManager = CacheManager.getInstance();
     const cachedAssets = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY);
     
@@ -106,6 +106,7 @@ export async function fetchXcAssetData(): Promise<{ xcAssets: Assets } | undefin
         const symbolLookup = createSymbolLookup(xcmAssetsRegistry);
         cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_XC_ASSETS, symbolLookup);
         
+        return xcmAssetsRegistry;
     } catch (e) {
         console.error('Error fetching XC assets:', e);
         return undefined;

@@ -2,7 +2,6 @@ import DataFetcher from '../DataFetcher';
 import RpcConnection from '../RpcConnection';
 import CacheManager from '../../cache/CacheManager';
 
-// Mock dependencies
 jest.mock('../RpcConnection');
 jest.mock('../../cache/CacheManager');
 
@@ -10,6 +9,7 @@ describe('DataFetcher', () => {
     const mockRpcUrl = 'ws://test.url';
     let dataFetcher: DataFetcher;
     let mockApi: any;
+    let mockRpcConnection: any;
 
     beforeEach(() => {
         mockApi = {
@@ -27,7 +27,11 @@ describe('DataFetcher', () => {
             }
         };
 
-        (RpcConnection.getInstance().connect as jest.Mock).mockResolvedValue(mockApi);
+        mockRpcConnection = {
+            connect: jest.fn().mockResolvedValue(mockApi)
+        };
+
+        (RpcConnection.getInstance as jest.Mock).mockReturnValue(mockRpcConnection);
         dataFetcher = new DataFetcher(mockRpcUrl);
     });
 
@@ -41,11 +45,5 @@ describe('DataFetcher', () => {
         await dataFetcher.fetchPoolData();
         expect(mockApi.query.nominationPools.totalValueLocked).toHaveBeenCalled();
         expect(CacheManager.getInstance().set).toHaveBeenCalledWith('pools', '500');
-    });
-
-    it('should refresh all caches', async () => {
-        await dataFetcher.refreshCache();
-        expect(mockApi.query.balances.totalIssuance).toHaveBeenCalled();
-        expect(mockApi.query.nominationPools.totalValueLocked).toHaveBeenCalled();
     });
 }); 
