@@ -24,8 +24,8 @@ function createAssetLookup(assets: Assets): AssetLookupCache {
     
     // Process both Polkadot and Kusama assets
     NETWORKS_SUPPORTED.forEach(chain => {
-        assets.assets['chain'].forEach(xcAssetInfo => {
-            xcAssetInfo.data.forEach(assetData => {
+        assets.assets[chain].forEach(assetInfo => {
+            assetInfo.data.forEach(assetData => {
                 if (assetData.currencyID) {
                     lookup[assetData.currencyID] = assetData;
                 }

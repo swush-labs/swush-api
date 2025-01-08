@@ -3,8 +3,8 @@ import type { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/sr
 
 export type Assets = {
     assets: {
-        polkadot: XcAssetsInfo[];
-        kusama: XcAssetsInfo[];
+        polkadot: AssetsInfo[];
+        kusama: AssetsInfo[];
     };
     xcAssets: {
         polkadot: XcAssetsXCMInfo[];
@@ -12,7 +12,7 @@ export type Assets = {
     };
 };
 
-export type XcAssetsInfo = {
+export type AssetsInfo = {
     relayChain: string;
     paraID: number;
     id: string | null;
