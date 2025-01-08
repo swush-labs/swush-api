@@ -4,5 +4,8 @@ export const COLORFULNOTION_XCM_GLOBAL_REGISTRY_URL = 'https://cdn.jsdelivr.net/
 export const CACHE_KEYS = {
     PARITY_XCM_REGISTRY: 'parity_xcm_registry',
     CN_XCM_REGISTRY: 'cn_xcm_registry',
-    CN_XCM_REGISTRY_ASSETS: 'cn_xcm_registry_assets'
+    CN_XCM_REGISTRY_AH_NATIVE_ASSETS: 'cn_xcm_registry_ah_native_assets',
+    CN_XCM_REGISTRY_XC_ASSETS: 'cn_xcm_registry_xc_assets'
 };
+
+export const NETWORKS_SUPPORTED = ['polkadot'];

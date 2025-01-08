@@ -6,7 +6,7 @@ import { AssetLookupCache } from "../registry/XCMRegistry";
 // Add helper function to get asset by currency ID
 export function getAssetByCurrencyId(currencyId: string): AssetData | undefined {
     const cacheManager = CacheManager.getInstance();
-    const lookupCache = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY_ASSETS) as AssetLookupCache;
+    const lookupCache = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY_AH_NATIVE_ASSETS) as AssetLookupCache;
     
     if (!lookupCache) {
         throw new Error('Asset lookup cache not initialized');
@@ -18,7 +18,7 @@ export function getAssetByCurrencyId(currencyId: string): AssetData | undefined 
 // Add helper function to get all cached currency IDs
 export function getAllCachedCurrencyIds(): string[] {
     const cacheManager = CacheManager.getInstance();
-    const lookupCache = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY_ASSETS) as AssetLookupCache;
+    const lookupCache = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY_AH_NATIVE_ASSETS) as AssetLookupCache;
     
     if (!lookupCache) {
         throw new Error('Asset lookup cache not initialized');

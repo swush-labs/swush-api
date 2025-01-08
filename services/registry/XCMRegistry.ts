@@ -1,9 +1,10 @@
 import {ChainInfoRegistry, ChainInfoKeys} from './types-xcm';
-import {XcAssets, AssetData} from './types-xcassets';
+import {Assets, AssetData, XCMAssetData} from './types-xcassets';
 import {
     PARITY_XCM_REGISTRY_URL,
     COLORFULNOTION_XCM_GLOBAL_REGISTRY_URL,
     CACHE_KEYS,
+    NETWORKS_SUPPORTED,
 } from '../constants';
 import CacheManager from '../cache/CacheManager';
 
@@ -13,17 +14,37 @@ export type AssetLookupCache = {
     [currencyId: string]: AssetData;
 };
 
+export type SymbolLookupCache = {
+    [symbol: string]: XCMAssetData;
+};
+
 // Helper function to create lookup cache
-function createAssetLookup(xcAssets: XcAssets): AssetLookupCache {
+function createAssetLookup(assets: Assets): AssetLookupCache {
     const lookup: AssetLookupCache = {};
     
     // Process both Polkadot and Kusama assets
-    ['polkadot', 'kusama'].forEach(chain => {
-        xcAssets[chain as keyof XcAssets].forEach(xcAssetInfo => {
+    NETWORKS_SUPPORTED.forEach(chain => {
+        assets.assets['chain'].forEach(xcAssetInfo => {
             xcAssetInfo.data.forEach(assetData => {
                 if (assetData.currencyID) {
                     lookup[assetData.currencyID] = assetData;
                 }
+            });
+        });
+    });
+    
+    return lookup;
+}
+
+function createSymbolLookup(assets: Assets): SymbolLookupCache {
+    const lookup: SymbolLookupCache = {};
+    
+    // Process both Polkadot and Kusama assets
+    NETWORKS_SUPPORTED.forEach(chain => {
+        assets.xcAssets[chain].forEach(xcAssetInfo => {
+            xcAssetInfo.data.forEach(assetData => {
+                // Use symbol as key and store the entire XCMAssetData
+                lookup[assetData.symbol] = assetData;
             });
         });
     });
@@ -55,8 +76,9 @@ export async function initializeRegistry() {
     }
 }
 
+
 // TODO: initialize XC assets lookup cache first
-export async function fetchXcAssetData(): Promise<{ xcAssets: XcAssets }> {
+export async function fetchXcAssetData(): Promise<{ xcAssets: Assets }> {
     const cacheManager = CacheManager.getInstance();
     const cachedAssets = cacheManager.get(CACHE_KEYS.CN_XCM_REGISTRY);
     
@@ -66,15 +88,19 @@ export async function fetchXcAssetData(): Promise<{ xcAssets: XcAssets }> {
 
     try {
         const xcAssetsRegistry = (await (await fetch(COLORFULNOTION_XCM_GLOBAL_REGISTRY_URL)).json()) as {
-            xcAssets: XcAssets;
+            xcAssets: Assets;
         };
         
         // Cache the fetched XC assets
         cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY, xcAssetsRegistry);
         
-        // Create and cache the lookup
+        // Create and cache the asset lookup (for AH native assets)
         const assetLookup = createAssetLookup(xcAssetsRegistry.xcAssets);
-        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_ASSETS, assetLookup);
+        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_AH_NATIVE_ASSETS, assetLookup);
+
+        // Create and cache the symbol lookup (for XC assets)
+        const symbolLookup = createSymbolLookup(xcAssetsRegistry.xcAssets);
+        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_XC_ASSETS, symbolLookup);
         
         return xcAssetsRegistry;
     } catch (e) {
