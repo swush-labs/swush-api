@@ -17,8 +17,11 @@ describe('RpcConnection', () => {
         mockApi = { someMethod: jest.fn() };
         (ApiPromise.create as jest.Mock).mockResolvedValue(mockApi);
         rpcConnection = RpcConnection.getInstance();
-        // Reset the instance's api to null before each test
+        // Reset both api and currentUrl before each test
         (rpcConnection as any).api = null;
+        (rpcConnection as any).currentUrl = null;
+        // Clear mock call history
+        jest.clearAllMocks();
     });
 
     it('should create API connection', async () => {
