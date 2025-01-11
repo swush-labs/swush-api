@@ -1,4 +1,3 @@
-
 // Copyright 2023 Parity Technologies (UK) Ltd.
 import type { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/src/createXcmTypes/types';
 
@@ -6,12 +5,24 @@ export interface AssetsInfo {
 	[key: string]: string;
 }
 
+export interface RawForeignAssetsData {
+	symbol: string;
+	name: string;
+	multiLocation: string;
+	assetHubReserveLocation: string;
+	originChainReserveLocation: string;
+}
+
+export interface RawForeignAssetsInfo {
+	[key: string]: RawForeignAssetsData;
+}
+
 export interface ForeignAssetsData {
 	symbol: string;
 	name: string;
 	multiLocation: UnionXcmMultiLocation;
-    assetHubReserveLocation: UnionXcmMultiLocation;
-    originChainReserveLocation: UnionXcmMultiLocation;
+	assetHubReserveLocation: UnionXcmMultiLocation;
+	originChainReserveLocation: UnionXcmMultiLocation;
 }
 
 export interface ForeignAssetsInfo {
@@ -82,7 +93,7 @@ export type SanitizedXcAssetsData = {
 	paraID: number;
 	symbol: string;
 	decimals: number;
-	xcmV1MultiLocation: string;
+	xcmV1MultiLocation: MultiLocationV1;
 	asset:
 		| { ForeignAsset: string }
 		| { VToken: string }
@@ -94,8 +105,12 @@ export type SanitizedXcAssetsData = {
 		| { Native: string }
 		| { Stable: string }
 		| string;
-	assetHubReserveLocation: string;
-	originChainReserveLocation?: string;
+	assetHubReserveLocation: UnionXcmMultiLocation;
+	originChainReserveLocation?: UnionXcmMultiLocation;
+};
+
+export type MultiLocationV1 = {
+	v1 : UnionXcmMultiLocation;
 };
 
 export type AssetsInfoType = 'assetsInfo' | 'foreignAssetsInfo' | 'poolPairsInfo';

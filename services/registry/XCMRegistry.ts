@@ -1,4 +1,4 @@
-import {ChainInfoRegistry, ChainInfoKeys} from './types-xcm';
+import {ChainInfoRegistry, ChainInfoKeys, ForeignAssetsInfo, RawForeignAssetsInfo} from './types-xcm';
 import {
     Assets,
     AssetData,
@@ -12,6 +12,7 @@ import {
     NETWORKS_SUPPORTED,
 } from '../constants';
 import CacheManager from '../cache/CacheManager';
+import { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/src/createXcmTypes/types';
 
 
 // Add type for the lookup cache
@@ -24,7 +25,7 @@ export type SymbolLookupCache = {
 };
 
 // Helper function to create lookup cache
-function createAssetLookup(xcmAssetsRegistry: Assets): AssetLookupCache {
+function createNativeAssetLookup(xcmAssetsRegistry: Assets): AssetLookupCache {
     const lookup: AssetLookupCache = {};
     
     NETWORKS_SUPPORTED.forEach(chain => {
@@ -42,20 +43,21 @@ function createAssetLookup(xcmAssetsRegistry: Assets): AssetLookupCache {
     return lookup;
 }
 
-function createSymbolLookup(xcmAssetsRegistry: Assets): SymbolLookupCache {
-    const lookup: SymbolLookupCache = {};
+export function createForeignAssetsInfo(chainInfoRegistry: any) {
+    const rawForeignAssetsInfo = chainInfoRegistry.polkadot["1000"]?.foreignAssetsInfo || {};
+    const processedData: ForeignAssetsInfo = {};
     
-    NETWORKS_SUPPORTED.forEach(chain => {
-        xcmAssetsRegistry.xcAssets[chain].forEach(xcAssetInfo => {
-            if (xcAssetInfo.id === "asset-hub-polkadot") {
-                xcAssetInfo.data.forEach(assetData => {
-                    lookup[assetData.symbol] = assetData;
-                });
-            }
-        });
+    Object.entries(rawForeignAssetsInfo as RawForeignAssetsInfo).forEach(([key, value]) => {
+        processedData[key] = {
+            symbol: value.symbol,
+            name: value.name,
+            multiLocation: JSON.parse(value.multiLocation),
+            assetHubReserveLocation: JSON.parse(value.assetHubReserveLocation),
+            originChainReserveLocation: JSON.parse(value.originChainReserveLocation)
+        };
     });
     
-    return lookup;
+    return processedData;
 }
 
 export async function initializeRegistry() {
@@ -68,10 +70,14 @@ export async function initializeRegistry() {
 
     try {
         const data = await fetch(PARITY_XCM_REGISTRY_URL);
-        const fetchedRegistry = (await data.json()) as ChainInfoRegistry<ChainInfoKeys>;
+        const fetchedRegistry = await data.json();
         
         // Cache the fetched registry
-        cacheManager.set(CACHE_KEYS.PARITY_XCM_REGISTRY, fetchedRegistry);
+        cacheManager.set(CACHE_KEYS.PARITY_XCM_REGISTRY, fetchedRegistry as ChainInfoRegistry<ChainInfoKeys>);
+
+        //create foreignAssetsInfo lookup   
+        const foreignAssetsInfo = createForeignAssetsInfo(fetchedRegistry);
+        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_FOREIGN_ASSETS, foreignAssetsInfo);
         
         return fetchedRegistry;
     } catch (e) {
@@ -99,12 +105,12 @@ export async function fetchXcAssetData(){
         cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY, xcmAssetsRegistry);
         
         // Create and cache the asset lookup
-        const assetLookup = createAssetLookup(xcmAssetsRegistry);
+        const assetLookup = createNativeAssetLookup(xcmAssetsRegistry);
         cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_AH_NATIVE_ASSETS, assetLookup);
 
-        // Create and cache the symbol lookup
-        const symbolLookup = createSymbolLookup(xcmAssetsRegistry);
-        cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_XC_ASSETS, symbolLookup);
+        // // Create and cache the symbol lookup
+        // const symbolLookup = createSymbolLookup(xcmAssetsRegistry);
+        // cacheManager.set(CACHE_KEYS.CN_XCM_REGISTRY_XC_ASSETS, symbolLookup);
         
         return xcmAssetsRegistry;
     } catch (e) {
