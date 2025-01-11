@@ -32,9 +32,13 @@ export interface ForeignAssetsInfo {
 export type PoolPairsData = {
 	[key: string]: {
 		lpToken: string;
-		pairInfo: [[UnionXcmMultiLocation,UnionXcmMultiLocation]]
+		pairInfo: UnionXcmMultiLocation[][]
 	};
 };
+
+export interface PoolInfo {
+	lpToken: string;
+}
 
 export interface ChainInfoKeys {
 	specName: string;

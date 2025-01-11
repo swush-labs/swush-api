@@ -1,4 +1,4 @@
-import {ChainInfoRegistry, ChainInfoKeys, ForeignAssetsInfo, RawForeignAssetsInfo} from './types-xcm';
+import {ChainInfoRegistry, ChainInfoKeys, ForeignAssetsInfo, RawForeignAssetsInfo} from '../types-xcm';
 import {
     Assets,
     AssetData,
