@@ -14,6 +14,9 @@ importers:
       '@polkadot/types':
         specifier: ^15.1.1
         version: 15.2.1
+      '@polkadot/types-augment':
+        specifier: ^15.2.1
+        version: 15.2.1
       '@polkadot/util':
         specifier: ^13.2.3
         version: 13.3.1

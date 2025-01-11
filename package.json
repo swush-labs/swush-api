@@ -11,10 +11,11 @@
     "test:registry": "jest services/registry/__tests__",
     "test:cache": "jest services/cache/__tests__",
     "test:network": "jest services/network/__tests__"
-},
+  },
   "dependencies": {
     "@polkadot/api": "^15.1.1",
     "@polkadot/types": "^15.1.1",
+    "@polkadot/types-augment": "^15.2.1",
     "@polkadot/util": "^13.2.3",
     "@polkadot/util-crypto": "^13.2.3",
     "@substrate/asset-transfer-api": "^0.4.5",
@@ -29,7 +30,9 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "testMatch": ["**/__tests__/**/*.test.ts"],
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
     }
