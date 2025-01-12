@@ -30,9 +30,12 @@ export type ForeignAssetsInfo = Map<UnionXcmMultiLocation, {
   deposit: string;
 }>;
 
-export type PoolPairsData = {
-	[key: string]: {
+export type PoolPairsInfo = {
 		lpToken: string;
-		pairInfo: [[UnionXcmMultiLocation,UnionXcmMultiLocation]]
-	};
+		pairInfo: TokenPair;
+};
+
+export type TokenPair = {
+	pairOne: string;
+	pairTwo: string;
 };

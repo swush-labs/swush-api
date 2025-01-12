@@ -4,12 +4,12 @@
 // services/DataFetcher.ts
 import RpcConnection from './RpcConnection';
 import CacheManager from '../cache/CacheManager';
-import { AssetInfo, AssetMetadata } from './types';
+import { AssetInfo, AssetMetadata, PoolPairsInfo, TokenPair } from './types';
 import { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/src/createXcmTypes/types';
 import { ForeignAssetsInfo } from './types';
 import { ApiPromise } from '@polkadot/api';
 
-interface NativeAsset {
+interface Asset {
   asset: AssetInfo;
   metadata: AssetMetadata;
 }
@@ -44,8 +44,8 @@ function serializeKey(key: any): string {
       foreignMetadata.map(([key, value]) => [serializeKey(key.args[0].toHuman()), value])
     );
 
-    const nativeAssetsMap = new Map<string, NativeAsset>();
-    const foreignAssetsMap = new Map<UnionXcmMultiLocation, { asset: AssetInfo; metadata: AssetMetadata }>();
+    const nativeAssetsMap = new Map<string, Asset>();
+    const foreignAssetsMap = new Map<string, Asset>();
 
     // Process native assets
     for (const [key, assetOption] of nativeAssets) {
@@ -53,7 +53,7 @@ function serializeKey(key: any): string {
         const metadata = nativeMetadataMap.get(assetId) as any;
  //       console.log('nativeMetadataMap ', metadata?.toHuman());
         if (metadata) {
-          const assetDetails: NativeAsset = {
+          const assetDetails: Asset = {
             asset: assetOption.toHuman() as unknown as AssetInfo,
             metadata: metadata.toHuman() as unknown as AssetMetadata
           };
@@ -76,7 +76,7 @@ function serializeKey(key: any): string {
           asset: assetOption.toHuman() as unknown as AssetInfo,
           metadata: metadata.toHuman() as unknown as AssetMetadata
         };
-    //    foreignAssetsMap.set(assetId, assetDetails);
+        foreignAssetsMap.set(assetId, assetDetails);
       }
     }
     // pretty print foreignAssetsMap
@@ -87,78 +87,52 @@ function serializeKey(key: any): string {
     cache.set('foreignAssets', foreignAssetsMap);
 
     console.log('All assets and metadata fetched and cached');
-   // this.fetchSystemParachainAssetConversionPoolInfo(nativeAssetsMap, foreignAssetsMap);
+   await fetchSystemParachainAssetConversionPoolInfo(nativeAssetsMap, foreignAssetsMap, api);
     return nativeAssetsMap;
   }
 
 
-  /* public async fetchSystemParachainAssetConversionPoolInfo(
-    nativeAssetsInfo: Map<string, NativeAsset>,
-    foreignAssetsInfo: Map<UnionXcmMultiLocation, { asset: AssetInfo; metadata: AssetMetadata }>
+  async function fetchSystemParachainAssetConversionPoolInfo(
+    nativeAssetsInfo: Map<string, Asset>,
+    foreignAssetsInfo: Map<string, Asset>,
+    api: ApiPromise
   ) {
-    const api = await RpcConnection.getInstance().connect(this.rpcUrl);
-
-    const poolPairsInfo: PoolPairsData = {};
-    const uniqueAssets = new Map<string, { symbol: string; name: string; multiLocation: string }>(); // To store unique assets
+    const poolPairsInfo: TokenPair[] = [];
+    const uniqueAssets = new Map<string, { symbol: string; name: string; multiLocation: string }>();
 
     if (api.query.assetConversion !== undefined) {
-        for (const [
-            poolKeyStorageData,
-            PoolInfo,
-        ] of await api.query.assetConversion.pools.entries()) {
-            const maybePoolData = poolKeyStorageData.toHuman();
-            const maybePoolInfo = PoolInfo.toHuman();
+      for (const [key, value] of await api.query.assetConversion.pools.entries()) {
+        const poolPairs = key.args[0].toHuman() as [any, any]; // Access the array of token pairs
+        
+        // Assuming TokenPair interface has assetA and assetB properties
+        const tokenPair: TokenPair = {
+          pairOne: serializeKey(poolPairs[0]), // First token in pair
+          pairTwo: serializeKey(poolPairs[1]), // Second token in pair
+        };
+        poolPairsInfo.push(tokenPair);
 
-            if (maybePoolData && maybePoolInfo) {
-                // remove any commas from multilocation key values e.g. Parachain: 2,125 -> Parachain: 2125
-                const poolAssetDataStr = JSON.stringify(maybePoolData).replace(
-                    /(\d),/g,
-                    '$1',
-                );
+        console.log('tokenPair ', tokenPair);
 
-                const palletAssetConversionNativeOrAssetIdData = JSON.parse(
-                    poolAssetDataStr,
-                ) as UnionXcmMultiLocation[][];
-
-                const pool = maybePoolInfo as unknown as PoolInfo;
-
-                poolPairsInfo[pool.lpToken] = {
-                    lpToken: pool.lpToken,
-                    pairInfo: palletAssetConversionNativeOrAssetIdData,
-                };
-
-                // Collect unique assets from pairInfo
-                for (const pair of palletAssetConversionNativeOrAssetIdData) {
-                    for (const asset of pair) {
-                        const assetId = JSON.stringify(asset); // Convert to string for unique key
-                        if (!uniqueAssets.has(assetId)) {
-                            // Check if it's a native or foreign asset
-                            const nativeAsset = nativeAssetsInfo.get(assetId);
-                            const foreignAsset = foreignAssetsInfo.get(assetId);
-
-                            if (nativeAsset) {
-                                uniqueAssets.set(assetId, {
-                                    symbol: nativeAsset.symbol,
-                                    name: nativeAsset.name,
-                                    multiLocation: nativeAsset.multiLocation,
-                                });
-                            } else if (foreignAsset) {
-                                uniqueAssets.set(assetId, {
-                                    symbol: foreignAsset.symbol,
-                                    name: foreignAsset.name,
-                                    multiLocation: foreignAsset.multiLocation,
-                                });
-                            }
-                        }
-                    }
-                }
+        // Store unique assets information
+        for (const asset of [poolPairs[0], poolPairs[1]]) {
+          const assetId = serializeKey(asset);
+          if (!uniqueAssets.has(assetId)) {
+            // Try to get asset info from either native or foreign assets
+            const assetInfo = nativeAssetsInfo.get(assetId) || foreignAssetsInfo.get(assetId);
+            if (assetInfo) {
+              uniqueAssets.set(assetId, {
+                symbol: assetInfo.metadata.symbol,
+                name: assetInfo.metadata.name,
+                multiLocation: assetId
+              });
             }
+          }
         }
+      }
     }
+    return poolPairsInfo;
+  }
 
-    // Now uniqueAssets contains all unique assets with their details
-    console.log('Unique Assets:', Array.from(uniqueAssets.values()));
-  } */
 
 
 
