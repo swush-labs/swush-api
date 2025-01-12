@@ -1,11 +1,9 @@
 import { initializeRegistry, fetchXcAssetData } from '../registry/XCMRegistry';
-import DataFetcher from '../network/DataFetcher';
 import CacheManager from './CacheManager';
 
 export class CacheService {
     private static instance: CacheService;
     private intervals: { [key: string]: NodeJS.Timer } = {};
-    private dataFetcher: DataFetcher;
 
     // Cache refresh intervals in milliseconds
     private static REFRESH_INTERVALS = {
@@ -14,14 +12,8 @@ export class CacheService {
         CHAIN_DATA: 1 * 60 * 1000         // 1 minute
     };
 
-    private constructor(rpcUrl: string) {
-        this.dataFetcher = new DataFetcher(rpcUrl);
-    }
 
-    public static getInstance(rpcUrl: string): CacheService {
-        if (!CacheService.instance) {
-            CacheService.instance = new CacheService(rpcUrl);
-        }
+    public static getInstance(): CacheService {
         return CacheService.instance;
     }
 
@@ -49,7 +41,8 @@ export class CacheService {
         // Start Chain Data refresh
         this.intervals['CHAIN_DATA'] = setInterval(async () => {
             try {
-                await this.dataFetcher.refreshCache();
+               // TODO : refresh cache
+               // await this.dataFetcher.refreshCache();
                 console.log('Chain Data cache refreshed');
             } catch (error) {
                 console.error('Failed to refresh Chain Data cache:', error);
@@ -71,7 +64,6 @@ export class CacheService {
             await Promise.all([
                 initializeRegistry(),
                 fetchXcAssetData(),
-                this.dataFetcher.refreshCache()
             ]);
             console.log('All caches initialized');
         } catch (error) {

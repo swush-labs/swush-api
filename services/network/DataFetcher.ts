@@ -6,32 +6,25 @@ import RpcConnection from './RpcConnection';
 import CacheManager from '../cache/CacheManager';
 import { AssetInfo, AssetMetadata } from './types';
 import { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/src/createXcmTypes/types';
-import { PoolPairsData, PoolInfo } from '../types-xcm';
+import { ForeignAssetsInfo } from './types';
+import { ApiPromise } from '@polkadot/api';
 
 interface NativeAsset {
   asset: AssetInfo;
   metadata: AssetMetadata;
 }
 
-interface ForeignAsset {
-  asset: AssetInfo;
-  metadata: AssetMetadata;
+// Utility function to serialize complex keys
+function serializeKey(key: any): string {
+  return JSON.stringify(key);
 }
-
-class DataFetcher {
-  private rpcUrl: string;
-
-  constructor(rpcUrl: string) {
-    this.rpcUrl = rpcUrl;
-  }
 
 
   /**
    * Fetches all assets (both native and foreign) and their metadata
    * @returns Map of asset IDs to their details
    */
-  public async fetchAllAssets(): Promise<Map<string, NativeAsset>> {
-    const api = await RpcConnection.getInstance().connect(this.rpcUrl);
+  export async function fetchAllAssets(api: ApiPromise) {
     const cache = CacheManager.getInstance();
 
     // Get all entries in parallel
@@ -44,56 +37,64 @@ class DataFetcher {
 
     // Create metadata maps for quick lookup
     const nativeMetadataMap = new Map(
-      nativeMetadata.map(([key, value]) => [key.args[0].toString(), value])
+      nativeMetadata.map(([key, value]) => [key.args[0].toHuman(), value])
     );
 
     const foreignMetadataMap = new Map(
-      foreignMetadata.map(([key, value]) => [key.args[0].toString(), value])
+      foreignMetadata.map(([key, value]) => [serializeKey(key.args[0].toHuman()), value])
     );
 
-    const assetDetailsMap = new Map<string, NativeAsset>();
+    const nativeAssetsMap = new Map<string, NativeAsset>();
+    const foreignAssetsMap = new Map<UnionXcmMultiLocation, { asset: AssetInfo; metadata: AssetMetadata }>();
 
     // Process native assets
     for (const [key, assetOption] of nativeAssets) {
-      const assetId = key.args[0].toString();
-      if (assetOption) {
-        const metadata = nativeMetadataMap.get(assetId);
+      const assetId = key.args[0].toHuman() as any;
+        const metadata = nativeMetadataMap.get(assetId) as any;
+ //       console.log('nativeMetadataMap ', metadata?.toHuman());
         if (metadata) {
           const assetDetails: NativeAsset = {
             asset: assetOption.toHuman() as unknown as AssetInfo,
             metadata: metadata.toHuman() as unknown as AssetMetadata
           };
-          assetDetailsMap.set(`native:${assetId}`, assetDetails);
+          nativeAssetsMap.set(assetId, assetDetails);
         }
-      }
     }
+    // pretty print nativeAssetsMap
+ //   console.log('Native Assets:', JSON.stringify(nativeAssetsMap, null, 2));
 
     // Process foreign assets
     for (const [key, assetOption] of foreignAssets) {
-      const assetId = key.args[0].toString();
-      if (assetOption) {
-        const metadata = foreignMetadataMap.get(assetId);
-        if (metadata) {
-          const assetDetails: NativeAsset = {
-            asset: assetOption.toHuman() as unknown as AssetInfo,
-            metadata: metadata.toHuman() as unknown as AssetMetadata
-          };
-          assetDetailsMap.set(`foreign:${assetId}`, assetDetails);
-        }
+      const assetId = serializeKey(key.args[0].toHuman()); // Use the utility function
+      console.log('Attempting to access foreignMetadataMap with assetId:', assetId); // Debugging line
+      const metadata = foreignMetadataMap.get(assetId);
+      //print assetId
+      console.log('assetId ', assetId);
+      console.log('foreignMetadataMap ', metadata?.toHuman());
+      if (metadata) {
+        const assetDetails = {
+          asset: assetOption.toHuman() as unknown as AssetInfo,
+          metadata: metadata.toHuman() as unknown as AssetMetadata
+        };
+    //    foreignAssetsMap.set(assetId, assetDetails);
       }
     }
+    // pretty print foreignAssetsMap
+ //   console.log('Foreign Assets:', JSON.stringify(foreignAssetsMap, null, 2));
 
     // Cache all assets and metadata separately for potential reuse
-    cache.set('all_assets', Object.fromEntries(assetDetailsMap));
-    cache.set('native_metadata', Object.fromEntries(nativeMetadataMap));
-    cache.set('foreign_metadata', Object.fromEntries(foreignMetadataMap));
+    cache.set('nativeAssets', nativeAssetsMap);
+    cache.set('foreignAssets', foreignAssetsMap);
 
     console.log('All assets and metadata fetched and cached');
-    return assetDetailsMap;
+   // this.fetchSystemParachainAssetConversionPoolInfo(nativeAssetsMap, foreignAssetsMap);
+    return nativeAssetsMap;
   }
 
 
-  public async fetchSystemParachainAssetConversionPoolInfo(
+  /* public async fetchSystemParachainAssetConversionPoolInfo(
+    nativeAssetsInfo: Map<string, NativeAsset>,
+    foreignAssetsInfo: Map<UnionXcmMultiLocation, { asset: AssetInfo; metadata: AssetMetadata }>
   ) {
     const api = await RpcConnection.getInstance().connect(this.rpcUrl);
 
@@ -157,8 +158,7 @@ class DataFetcher {
 
     // Now uniqueAssets contains all unique assets with their details
     console.log('Unique Assets:', Array.from(uniqueAssets.values()));
-  }
-}
+  } */
 
 
-export default DataFetcher;
+

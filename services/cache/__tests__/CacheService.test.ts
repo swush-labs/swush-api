@@ -15,7 +15,7 @@ describe('CacheService', () => {
         // TODO: global.setInterval = jest.fn();
         global.clearInterval = jest.fn();
         
-        cacheService = CacheService.getInstance(mockRpcUrl);
+        cacheService = CacheService.getInstance();
     });
 
     afterEach(() => {
