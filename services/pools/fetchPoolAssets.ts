@@ -1,6 +1,3 @@
-// Portions of this code are derived from the paritytech/asset-transfer-api-registry repository,
-// licensed under the Apache License 2.0. See LICENSE-APACHE for details.
-
 import CacheManager from '../cache/CacheManager';
 import { AssetInfo, AssetMetadata, TokenPair, Asset, XcmV4Location } from './types';
 import { ApiPromise } from '@polkadot/api';

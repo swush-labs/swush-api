@@ -1,12 +1,14 @@
+// Portions of this code are derived from the paritytech/asset-transfer-api-registry repository,
+// licensed under the Apache License 2.0. See LICENSE-APACHE for details.
+
 import { AnyJson } from "@polkadot/types/types";
-import { UnionXcmMultiLocation, XcmV2Network } from "@substrate/asset-transfer-api/lib/src/createXcmTypes/types";
+import { XcmV2Network } from "@substrate/asset-transfer-api/lib/src/createXcmTypes/types";
 import { RequireOnlyOne } from "@substrate/asset-transfer-api/lib/src/types";
 
 export interface Asset {
   asset: AssetInfo;
   metadata: AssetMetadata;
 }
-
 
 export interface AssetInfo {
   supply: string;
@@ -29,14 +31,6 @@ export interface AssetMetadata {
   isFrozen: boolean;
   deposit: string;
 }
-
-export type ForeignAssetsInfo = Map<UnionXcmMultiLocation, {
-  name: string;
-  symbol: string;
-  decimals: number;
-  isFrozen: boolean;
-  deposit: string;
-}>;
 
 export type PoolPairsInfo = {
 		lpToken: string;
