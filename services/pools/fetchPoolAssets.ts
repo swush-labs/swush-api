@@ -1,19 +1,11 @@
 // Portions of this code are derived from the paritytech/asset-transfer-api-registry repository,
 // licensed under the Apache License 2.0. See LICENSE-APACHE for details.
 
-// services/DataFetcher.ts
-import RpcConnection from '../network/RpcConnection';
 import CacheManager from '../cache/CacheManager';
-import { AssetInfo, AssetMetadata, PoolPairsInfo, TokenPair } from '../network/types';
-import { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/src/createXcmTypes/types';
-import { ForeignAssetsInfo } from '../network/types';
+import { AssetInfo, AssetMetadata, TokenPair, Asset, XcmV4Location } from './types';
 import { ApiPromise } from '@polkadot/api';
 import fs from 'fs';
 
-interface Asset {
-  asset: AssetInfo;
-  metadata: AssetMetadata;
-}
 
 // Utility function to serialize complex keys
 function serializeKey(key: any): string {
@@ -56,8 +48,12 @@ export async function fetchAllAssets(api: ApiPromise) {
     const metadata = nativeMetadataMap.get(assetId) as any;
     if (metadata) {
       const assetDetails: Asset = {
-        asset: assetOption.toHuman() as unknown as AssetInfo,
-        metadata: metadata.toHuman() as unknown as AssetMetadata
+        asset: JSON.parse(
+          JSON.stringify(assetOption.toHuman()).replace(/(\d),/g, '$1')
+        ) as AssetInfo,
+        metadata: JSON.parse(
+          JSON.stringify(metadata.toHuman()).replace(/(\d),/g, '$1')
+        ) as AssetMetadata
       };
       nativeAssetsMap.set(assetId, assetDetails);
     }
@@ -65,12 +61,16 @@ export async function fetchAllAssets(api: ApiPromise) {
 
   // Process foreign assets
   for (const [key, assetOption] of foreignAssets) {
-    const assetId = serializeKey(key.args[0].toHuman()).replace(/(\d),/g, '$1') ; // Use the utility function
+    const assetId = serializeKey(key.args[0].toHuman());
     const metadata = foreignMetadataMap.get(assetId);
     if (metadata) {
       const assetDetails = {
-        asset: assetOption.toHuman() as unknown as AssetInfo,
-        metadata: metadata.toHuman() as unknown as AssetMetadata
+        asset: JSON.parse(
+          JSON.stringify(assetOption.toHuman()).replace(/(\d),/g, '$1')
+        ) as AssetInfo,
+        metadata: JSON.parse(
+          JSON.stringify(metadata.toHuman()).replace(/(\d),/g, '$1')
+        ) as AssetMetadata
       };
       foreignAssetsMap.set(assetId, assetDetails);
     }
@@ -97,20 +97,20 @@ async function fetchSystemParachainAssetConversionPoolInfo(
   if (api.query.assetConversion !== undefined) {
     for (const [key, value] of await api.query.assetConversion.pools.entries()) {
       const poolAssetDataStr = JSON.stringify(key.args[0].toHuman()).replace(/(\d),/g, '$1');
-      const poolPairs = JSON.parse(poolAssetDataStr) as [UnionXcmMultiLocation, UnionXcmMultiLocation];
+      const poolPairs = JSON.parse(poolAssetDataStr) as [XcmV4Location, XcmV4Location];
       
       // Process both assets in the pair
       const [assetOne, assetTwo] = poolPairs;
       const assetsToProcess = [assetOne, assetTwo];
 
       for (const asset of assetsToProcess) {
-        const xcmAsset = asset as UnionXcmMultiLocation;
+        const xcmAsset = asset as XcmV4Location;
         console.log('Processing XCM Asset:', xcmAsset);
 
         if (
-          Number(xcmAsset.parents) === 0 &&
+          xcmAsset.parents === '0' &&
           xcmAsset.interior?.X2 &&
-          Number(xcmAsset.interior.X2[0]?.PalletInstance) === 50
+          xcmAsset.interior.X2[0]?.PalletInstance === '50'
         ) {
           // Handle native assets
           const generalIndex = xcmAsset.interior.X2[1]?.GeneralIndex;
@@ -151,7 +151,7 @@ async function fetchSystemParachainAssetConversionPoolInfo(
     }
 
     fs.writeFileSync(
-      'uniqueAssets.json', 
+      'examples/output/uniqueAssets.json', 
       JSON.stringify(Object.fromEntries(uniqueAssets), null, 2)
     );
 
