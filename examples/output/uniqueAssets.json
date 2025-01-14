@@ -55,7 +55,7 @@
       "deposit": "100000000000",
       "minBalance": "1",
       "isSufficient": false,
-      "accounts": "1307164",
+      "accounts": "1307163",
       "sufficients": "0",
       "approvals": "2",
       "status": "Live"
@@ -88,6 +88,328 @@
       "name": "DEMO",
       "symbol": "DEMO",
       "decimals": "6",
+      "isFrozen": false
+    }
+  },
+  "1148": {
+    "asset": {
+      "owner": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "issuer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "admin": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "freezer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "supply": "10000000000000",
+      "deposit": "2019000000",
+      "minBalance": "10000000000",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008400000",
+      "name": "Nikola Test 2",
+      "symbol": "NT2",
+      "decimals": "10",
+      "isFrozen": false
+    }
+  },
+  "1313": {
+    "asset": {
+      "owner": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "issuer": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
+      "admin": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
+      "freezer": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
+      "supply": "100000000",
+      "deposit": "2019000000",
+      "minBalance": "100",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Frozen"
+    },
+    "metadata": {
+      "deposit": "2007500000",
+      "name": "Gagi",
+      "symbol": "GGI",
+      "decimals": "6",
+      "isFrozen": false
+    }
+  },
+  "1337": {
+    "asset": {
+      "owner": "12xLgPQunSsPkwMJ3vAgfac7mtU3Xw6R4fbHQcCp2QqXzdtu",
+      "issuer": "12GiwQK3AYwaQWgjAvFwWG9L3RYoedk9kTSBSYzFKGSfqkEQ",
+      "admin": "13TEbzUcFVsdZA1BAWm2TjLMRZ4y2CQDq3JEoiPqXh43MEoa",
+      "freezer": "12amXH9jF3ob2EqE1a44NKnoFdxz6qsXzmYY17pT84764dLL",
+      "supply": "350019960831940",
+      "deposit": "100000000000",
+      "minBalance": "10000",
+      "isSufficient": true,
+      "accounts": "1810",
+      "sufficients": "1794",
+      "approvals": "2",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008000000",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": "6",
+      "isFrozen": false
+    }
+  },
+  "1984": {
+    "asset": {
+      "owner": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "issuer": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "admin": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "freezer": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "supply": "77998715321907",
+      "deposit": "1000000000000",
+      "minBalance": "10000",
+      "isSufficient": true,
+      "accounts": "9189",
+      "sufficients": "9080",
+      "approvals": "14",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008200000",
+      "name": "Tether USD",
+      "symbol": "USDt",
+      "decimals": "6",
+      "isFrozen": false
+    }
+  },
+  "3164": {
+    "asset": {
+      "owner": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "issuer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "admin": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "freezer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "supply": "1000000",
+      "deposit": "2019000000",
+      "minBalance": "100000",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2007900000",
+      "name": "TestTest",
+      "symbol": "TTT",
+      "decimals": "3",
+      "isFrozen": false
+    }
+  },
+  "5361": {
+    "asset": {
+      "owner": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "issuer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "admin": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "freezer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "supply": "100000000000000",
+      "deposit": "2019000000",
+      "minBalance": "10000000000",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008200000",
+      "name": "Nikola Test",
+      "symbol": "NAT",
+      "decimals": "10",
+      "isFrozen": false
+    }
+  },
+  "6594": {
+    "asset": {
+      "owner": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "issuer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "admin": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "freezer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "supply": "10000000",
+      "deposit": "2019000000",
+      "minBalance": "1000000",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "MVPW Test",
+      "symbol": "MVPW",
+      "decimals": "3",
+      "isFrozen": false
+    }
+  },
+  "42069": {
+    "asset": {
+      "owner": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "issuer": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "admin": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "freezer": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "supply": "22996383897549355766",
+      "deposit": "100000000000",
+      "minBalance": "1000000",
+      "isSufficient": false,
+      "accounts": "293",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2007800000",
+      "name": "STINK",
+      "symbol": "STINK",
+      "decimals": "10",
+      "isFrozen": false
+    }
+  },
+  "112233": {
+    "asset": {
+      "owner": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "issuer": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "admin": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "freezer": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "supply": "247000000000000",
+      "deposit": "2019000000",
+      "minBalance": "10000000000",
+      "isSufficient": false,
+      "accounts": "5",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008400000",
+      "name": "My Test Coin ",
+      "symbol": "MTC",
+      "decimals": "10",
+      "isFrozen": false
+    }
+  },
+  "22222030": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "100000000000000000000",
+      "deposit": "2019000000",
+      "minBalance": "1000000000000",
+      "isSufficient": false,
+      "accounts": "3",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "Pink Pigs",
+      "symbol": "PIGS",
+      "decimals": "12",
+      "isFrozen": false
+    }
+  },
+  "22222051": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "50000000000000000000",
+      "deposit": "2019000000",
+      "minBalance": "1000000000000",
+      "isSufficient": false,
+      "accounts": "3",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "synergy AI",
+      "symbol": "NIN",
+      "decimals": "12",
+      "isFrozen": false
+    }
+  },
+  "22222052": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "50000000000000000000",
+      "deposit": "2019000000",
+      "minBalance": "1000000000000",
+      "isSufficient": false,
+      "accounts": "3",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2009200000",
+      "name": "Quant Full Potato.AI",
+      "symbol": "MODE",
+      "decimals": "12",
+      "isFrozen": false
+    }
+  },
+  "22222060": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "84000000000000000000",
+      "deposit": "2019000000",
+      "minBalance": "1000000000000",
+      "isSufficient": false,
+      "accounts": "3",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008300000",
+      "name": "Thunderdome",
+      "symbol": "TATE",
+      "decimals": "12",
+      "isFrozen": false
+    }
+  },
+  "50000058": {
+    "asset": {
+      "owner": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "issuer": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "admin": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "freezer": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "supply": "1000000000000000000000000000",
+      "deposit": "2019000000",
+      "minBalance": "100000000",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "G Token",
+      "symbol": "GTOKEN",
+      "decimals": "18",
       "isFrozen": false
     }
   },
@@ -143,11 +465,11 @@
       "issuer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "admin": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "freezer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
-      "supply": "13648326036940380644326375",
+      "supply": "13648101106982208400172922",
       "deposit": "2019000000",
       "minBalance": "10000000000000000",
       "isSufficient": false,
-      "accounts": "473499",
+      "accounts": "473498",
       "sufficients": "0",
       "approvals": "3",
       "status": "Live"

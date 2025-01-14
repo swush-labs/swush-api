@@ -82,7 +82,7 @@ export type XcmV4JunctionBase = {
       id: string;
   };
   PalletInstance: string;
-  GeneralIndex: string | number;
+  GeneralIndex: string;
   GeneralKey: string;
   OnlyChild: AnyJson;
   Plurality: {

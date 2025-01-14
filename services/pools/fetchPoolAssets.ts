@@ -12,6 +12,11 @@ function serializeKey(key: any): string {
 }
 
 
+// transform key using regex to remove commas
+function transformKey(key: any): string {
+  return key.replace(/(\d),/g, '$1');
+}
+
 /**
  * Fetches all assets (both native and foreign) and their metadata
  * @returns Map of asset IDs to their details
@@ -29,7 +34,7 @@ export async function fetchAllAssets(api: ApiPromise) {
 
   // Create metadata maps for quick lookup
   const nativeMetadataMap = new Map(
-    nativeMetadata.map(([key, value]) => [key.args[0].toHuman(), value])
+    nativeMetadata.map(([key, value]) => [transformKey(key.args[0].toHuman()), value])
   );
 
   const foreignMetadataMap = new Map(
@@ -41,8 +46,8 @@ export async function fetchAllAssets(api: ApiPromise) {
 
   // Process native assets
   for (const [key, assetOption] of nativeAssets) {
-    const assetId = key.args[0].toHuman() as any;
-    const metadata = nativeMetadataMap.get(assetId) as any;
+    const assetId = transformKey(key.args[0].toHuman())
+    const metadata = nativeMetadataMap.get(assetId);
     if (metadata) {
       const assetDetails: Asset = {
         asset: JSON.parse(
@@ -55,6 +60,11 @@ export async function fetchAllAssets(api: ApiPromise) {
       nativeAssetsMap.set(assetId, assetDetails);
     }
   }
+  //write native assets to file
+  fs.writeFileSync(
+    'examples/output/nativeAssets.json', 
+    JSON.stringify(Object.fromEntries(nativeAssetsMap), null, 2)
+  );
 
   // Process foreign assets
   for (const [key, assetOption] of foreignAssets) {
@@ -101,18 +111,15 @@ async function fetchSystemParachainAssetConversionPoolInfo(
       const assetsToProcess = [assetOne, assetTwo];
 
       for (const asset of assetsToProcess) {
-        const xcmAsset = asset as XcmV4Location;
-        console.log('Processing XCM Asset:', xcmAsset);
 
         if (
-          xcmAsset.parents === '0' &&
-          xcmAsset.interior?.X2 &&
-          xcmAsset.interior.X2[0]?.PalletInstance === '50'
+          asset.parents === '0' &&
+          asset.interior?.X2 &&
+          asset.interior.X2[0]?.PalletInstance === '50'
         ) {
           // Handle native assets
-          const generalIndex = xcmAsset.interior.X2[1]?.GeneralIndex;
-          if (generalIndex !== undefined) {
-            const assetId = generalIndex.toString();
+          const assetId = asset.interior.X2[1]?.GeneralIndex;
+          if (assetId !== undefined) {
             const nativeAssetInfo = nativeAssetsInfo.get(assetId);
             if (nativeAssetInfo) {
               uniqueAssets.set(assetId, nativeAssetInfo);
@@ -122,20 +129,17 @@ async function fetchSystemParachainAssetConversionPoolInfo(
         } else {
           // Handle foreign assets
           const normalizedXcmLocation = {
-            parents: xcmAsset.parents,
-            interior: xcmAsset.interior
+            parents: asset.parents,
+            interior: asset.interior
           };
           
           const foreignAssetId = serializeKey(normalizedXcmLocation);
-          console.log('Looking up foreign asset with ID:', foreignAssetId);
           
           const foreignAssetInfo = foreignAssetsInfo.get(foreignAssetId);
           if (foreignAssetInfo) {
             uniqueAssets.set(foreignAssetId, foreignAssetInfo);
             console.log('Added foreign asset:', foreignAssetId);
-          } else {
-            console.log('Foreign asset not found:', foreignAssetId);
-          }
+          } 
         }
       }
 
