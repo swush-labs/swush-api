@@ -135,7 +135,6 @@ async function fetchSystemParachainAssetConversionPoolInfo(
             console.log('Added foreign asset:', foreignAssetId);
           } else {
             console.log('Foreign asset not found:', foreignAssetId);
-            console.log('Available foreign asset IDs:', Array.from(foreignAssetsInfo.keys()));
           }
         }
       }
