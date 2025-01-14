@@ -10,8 +10,8 @@ import fs from 'fs';
 // Utility function to serialize complex keys
 function serializeKey(key: any): string {
   // Remove any undefined or null values to ensure consistent serialization
-  const cleanKey = JSON.parse(JSON.stringify(key));
-  return JSON.stringify(cleanKey).replace(/(\d),/g, '$1');
+  // const cleanKey = JSON.parse(JSON.stringify(key));
+  return JSON.stringify(key).replace(/(\d),/g, '$1');
 }
 
 
@@ -49,10 +49,10 @@ export async function fetchAllAssets(api: ApiPromise) {
     if (metadata) {
       const assetDetails: Asset = {
         asset: JSON.parse(
-          JSON.stringify(assetOption.toHuman()).replace(/(\d),/g, '$1')
+          serializeKey(assetOption.toHuman())
         ) as AssetInfo,
         metadata: JSON.parse(
-          JSON.stringify(metadata.toHuman()).replace(/(\d),/g, '$1')
+          serializeKey(metadata.toHuman())
         ) as AssetMetadata
       };
       nativeAssetsMap.set(assetId, assetDetails);
@@ -66,10 +66,10 @@ export async function fetchAllAssets(api: ApiPromise) {
     if (metadata) {
       const assetDetails = {
         asset: JSON.parse(
-          JSON.stringify(assetOption.toHuman()).replace(/(\d),/g, '$1')
+          serializeKey(assetOption.toHuman())
         ) as AssetInfo,
         metadata: JSON.parse(
-          JSON.stringify(metadata.toHuman()).replace(/(\d),/g, '$1')
+          serializeKey(metadata.toHuman())
         ) as AssetMetadata
       };
       foreignAssetsMap.set(assetId, assetDetails);
@@ -96,7 +96,7 @@ async function fetchSystemParachainAssetConversionPoolInfo(
 
   if (api.query.assetConversion !== undefined) {
     for (const [key, value] of await api.query.assetConversion.pools.entries()) {
-      const poolAssetDataStr = JSON.stringify(key.args[0].toHuman()).replace(/(\d),/g, '$1');
+      const poolAssetDataStr = serializeKey(key.args[0].toHuman());
       const poolPairs = JSON.parse(poolAssetDataStr) as [XcmV4Location, XcmV4Location];
       
       // Process both assets in the pair
