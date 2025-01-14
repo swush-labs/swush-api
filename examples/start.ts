@@ -1,8 +1,7 @@
 import RpcConnection from '../services/network/RpcConnection';
-import { fetchAllAssets } from '../services/network/DataFetcher';
-
+import { fetchAllAssets } from '../services/pools/fetchPoolAssets';
+import { RPC_URL } from '../services/constants';
 //asset hub RPC URL
-const RPC_URL = 'wss://polkadot-asset-hub-rpc.polkadot.io';
 const CACHE_REFRESH_INTERVAL = 60000; // 60 seconds
 
 // Initialize the DEX Aggregator Service

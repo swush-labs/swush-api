@@ -10,3 +10,5 @@ export const CACHE_KEYS = {
 };
 
 export const NETWORKS_SUPPORTED = ['polkadot'];
+
+export const RPC_URL = 'wss://asset-hub-polkadot.dotters.network';

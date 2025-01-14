@@ -1,0 +1,232 @@
+{
+  "18": {
+    "asset": {
+      "owner": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "issuer": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "admin": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "freezer": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "supply": "2,199,999,301,527,422",
+      "deposit": "100,000,000,000",
+      "minBalance": "1",
+      "isSufficient": false,
+      "accounts": "21,909",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,600,000",
+      "name": "DOTA",
+      "symbol": "DOTA",
+      "decimals": "4",
+      "isFrozen": false
+    }
+  },
+  "23": {
+    "asset": {
+      "owner": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "issuer": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "admin": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "freezer": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "supply": "22,994,446,422,708,564,040",
+      "deposit": "100,000,000,000",
+      "minBalance": "1",
+      "isSufficient": false,
+      "accounts": "718",
+      "sufficients": "0",
+      "approvals": "3",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,600,000",
+      "name": "PINK",
+      "symbol": "PINK",
+      "decimals": "10",
+      "isFrozen": false
+    }
+  },
+  "30": {
+    "asset": {
+      "owner": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "issuer": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "admin": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "freezer": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "supply": "9,999,999,594,298,900,000,000",
+      "deposit": "100,000,000,000",
+      "minBalance": "1",
+      "isSufficient": false,
+      "accounts": "1,307,164",
+      "sufficients": "0",
+      "approvals": "2",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,400,000",
+      "name": "DED",
+      "symbol": "DED",
+      "decimals": "10",
+      "isFrozen": false
+    }
+  },
+  "111": {
+    "asset": {
+      "owner": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "issuer": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "admin": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "freezer": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "supply": "1,000,000,000,000",
+      "deposit": "2,019,000,000",
+      "minBalance": "10,000",
+      "isSufficient": false,
+      "accounts": "5",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,600,000",
+      "name": "DEMO",
+      "symbol": "DEMO",
+      "decimals": "6",
+      "isFrozen": false
+    }
+  },
+  "{\"parents\":\"1\",\"interior\":{\"X2\":[{\"Parachain\":\"2004\"},{\"PalletInstance\":\"10\"}]}}": {
+    "asset": {
+      "owner": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "issuer": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "admin": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "freezer": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "supply": "0",
+      "deposit": "100,000,000,000",
+      "minBalance": "1",
+      "isSufficient": false,
+      "accounts": "1",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,900,000",
+      "name": "Glimmer",
+      "symbol": "GLMR",
+      "decimals": "18",
+      "isFrozen": false
+    }
+  },
+  "{\"parents\":\"2\",\"interior\":{\"X2\":[{\"GlobalConsensus\":{\"Ethereum\":{\"chainId\":\"1\"}}},{\"AccountKey20\":{\"network\":null,\"key\":\"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\"}}]}}": {
+    "asset": {
+      "owner": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "issuer": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "admin": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "freezer": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "supply": "612,910,700,032,071,586,571",
+      "deposit": "2,019,000,000",
+      "minBalance": "15,000,000,000,000",
+      "isSufficient": true,
+      "accounts": "74",
+      "sufficients": "58",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "0",
+      "name": "Wrapped Ether",
+      "symbol": "WETH",
+      "decimals": "18",
+      "isFrozen": false
+    }
+  },
+  "{\"parents\":\"1\",\"interior\":{\"X1\":[{\"Parachain\":\"3369\"}]}}": {
+    "asset": {
+      "owner": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "issuer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "admin": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "freezer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "supply": "13,648,381,940,910,028,057,798,573",
+      "deposit": "2,019,000,000",
+      "minBalance": "10,000,000,000,000,000",
+      "isSufficient": false,
+      "accounts": "473,500",
+      "sufficients": "0",
+      "approvals": "3",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,800,000",
+      "name": "Mythos",
+      "symbol": "MYTH",
+      "decimals": "18",
+      "isFrozen": false
+    }
+  },
+  "{\"parents\":\"2\",\"interior\":{\"X1\":[{\"GlobalConsensus\":\"Kusama\"}]}}": {
+    "asset": {
+      "owner": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "issuer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "admin": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "freezer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "supply": "10,073,481,869,248",
+      "deposit": "0",
+      "minBalance": "1,000,000,000",
+      "isSufficient": true,
+      "accounts": "26",
+      "sufficients": "26",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "0",
+      "name": "Kusama",
+      "symbol": "KSM",
+      "decimals": "12",
+      "isFrozen": false
+    }
+  },
+  "{\"parents\":\"1\",\"interior\":{\"X1\":[{\"Parachain\":\"2051\"}]}}": {
+    "asset": {
+      "owner": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "issuer": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "admin": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "freezer": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "supply": "500,000,000,000",
+      "deposit": "2,019,000,000",
+      "minBalance": "1,000,000,000",
+      "isSufficient": false,
+      "accounts": "2",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,009,100,000",
+      "name": "Ajuna Polkadot AJUN",
+      "symbol": "AJUN",
+      "decimals": "12",
+      "isFrozen": false
+    }
+  },
+  "{\"parents\":\"1\",\"interior\":{\"X1\":[{\"Parachain\":\"3370\"}]}}": {
+    "asset": {
+      "owner": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "issuer": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "admin": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "freezer": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "supply": "50,201,953,817,597,571,447,565",
+      "deposit": "2,019,000,000",
+      "minBalance": "1",
+      "isSufficient": false,
+      "accounts": "4",
+      "sufficients": "0",
+      "approvals": "0",
+      "status": "Live"
+    },
+    "metadata": {
+      "deposit": "2,007,600,000",
+      "name": "LAOS",
+      "symbol": "LAOS",
+      "decimals": "18",
+      "isFrozen": false
+    }
+  }
+}
