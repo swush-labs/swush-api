@@ -1,6 +1,7 @@
 import RpcConnection from '../services/network/RpcConnection';
 import { fetchAllAssets } from '../services/pools/fetchPoolAssets';
 import { RPC_URL } from '../services/constants';
+import { ApiPromise } from '@polkadot/api';
 //asset hub RPC URL
 const CACHE_REFRESH_INTERVAL = 60000; // 60 seconds
 
@@ -10,8 +11,8 @@ async function initializeDexAggregator() {
 
   try {
     // Establish a connection to the blockchain node
-    const rpcConnection = RpcConnection.getInstance();
-    const api = await rpcConnection.connect(RPC_URL);
+    const rpcConnection = RpcConnection.getInstance('polkadotjs');
+    const api = await rpcConnection.connect(RPC_URL) as ApiPromise;
 
     console.log('Successfully connected to the blockchain node.');
 

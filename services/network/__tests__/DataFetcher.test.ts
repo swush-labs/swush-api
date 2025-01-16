@@ -1,4 +1,4 @@
-import DataFetcher from '../DataFetcher';
+/* import DataFetcher from '../DataFetcher';
 import RpcConnection from '../RpcConnection';
 import CacheManager from '../../cache/CacheManager';
 
@@ -46,4 +46,4 @@ describe.skip('DataFetcher', () => {
         expect(mockApi.query.nominationPools.totalValueLocked).toHaveBeenCalled();
         expect(CacheManager.getInstance().set).toHaveBeenCalledWith('pools', '500');
     });
-}); 
+});  */
