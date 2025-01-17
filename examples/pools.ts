@@ -1,4 +1,4 @@
-import RpcConnection from "../services/network/RpcConnection";
+import RpcConnection, { isPapiConnection } from "../services/network/RpcConnection";
 import { RPC_URL } from "../services/constants";
 import { SS58String, TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub, XcmV3Junction, XcmV3Junctions } from '@polkadot-api/descriptors';
@@ -8,7 +8,8 @@ import CacheManager from '../services/cache/CacheManager';
 //enum for asset type
 enum AssetType {
     Native = 'Native',
-    Foreign = 'Foreign'
+    Foreign = 'Foreign',
+    Hydration = 'Hydration'
 }
 
 export type Asset = {
@@ -51,7 +52,7 @@ export type TokenPair = {
 };
 
 // getXcmV3Multilocation for native asset from assetId
-export function getXcmV3Multilocation(assetId: string): XcmV4Location {
+export function getXcmV3Multilocation(assetId: bigint | number): XcmV4Location {
     return {
         parents: 0,
         interior: XcmV3Junctions.X2([
@@ -103,19 +104,19 @@ async function fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>) {
 
     // Create metadata maps for quick lookup using keyArgs
     const nativeMetadataMap = new Map(
-        nativeMetadata.map(entry => [serializeKey(entry.keyArgs[0]), entry.value])
+        nativeMetadata.map(entry => [BigInt(entry.keyArgs[0]), entry.value])
     );
 
     const foreignMetadataMap = new Map(
         foreignMetadata.map(entry => [serializeKey(entry.keyArgs[0]), entry.value])
     );
 
-    const nativeAssetsMap = new Map<string, Asset>();
+    const nativeAssetsMap = new Map<bigint, Asset>();
     const foreignAssetsMap = new Map<string, Asset>();
 
     // Process native assets
     for (const nativeAsset of nativeAssets) {
-        const assetId = serializeKey(nativeAsset.keyArgs[0]);
+        const assetId = BigInt(nativeAsset.keyArgs[0]);
         const metadata = nativeMetadataMap.get(assetId);
 
         if (metadata) {
@@ -191,7 +192,7 @@ async function fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>) {
 }
 
 async function fetchPoolsPapi(
-    nativeAssetsInfo: Map<string, Asset>,
+    nativeAssetsInfo: Map<bigint, Asset>,
     foreignAssetsInfo: Map<string, Asset>,
     api: TypedApi<typeof polkadot_asset_hub>
 ) {
@@ -217,13 +218,13 @@ async function fetchPoolsPapi(
                 // Handle native assets
                 for (const entry of interior.value)
                     if (entry.type === "GeneralIndex") {
-
-                        //get asset id
-                        const assetId = serializeKey(entry.value);
+                        //get asset id (already bigint)
+                        const assetId = entry.value;
                         const nativeAssetInfo = nativeAssetsInfo.get(assetId);
                         if (nativeAssetInfo) {
-                            uniqueAssets.set(assetId, nativeAssetInfo);
-                            console.log('Added native asset:', assetId);
+                            const xcmLocation = getXcmV3Multilocation(assetId);
+                            uniqueAssets.set(serializeKey(xcmLocation), nativeAssetInfo);
+                            console.log('Added native asset:', assetId.toString());
                         }
                     }
             }
@@ -270,9 +271,15 @@ async function fetchPoolsPapi(
 async function main() {
     try {
         const papiConn = RpcConnection.getInstance('papi');
-        const api = await papiConn.connect(RPC_URL) as TypedApi<typeof polkadot_asset_hub>;
-
+        const result = await papiConn.connect(RPC_URL);
+        
+        if (!isPapiConnection(result)) {
+            throw new Error('Invalid connection type');
+        }
+        
+        const { api, client } = result;
         await fetchAllAssetsPapi(api);
+        client.destroy();
     } catch (error) {
         console.error("Error:", error);
     }
