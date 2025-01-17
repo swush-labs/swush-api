@@ -20,110 +20,101 @@ const papiApi = papiConn.getApi();
  * 
  */
 
-export interface PapiConnection {
-    api: TypedApi<typeof polkadot_asset_hub>;
-    client: PolkadotClient;
-}
-
-export function isPapiConnection(result: any): result is PapiConnection {
-    return result && 'api' in result && 'client' in result;
-}
-
 type ApiType = 'polkadotjs' | 'papi';
 
-type ApiReturnType = ApiPromise | TypedApi<any> | PapiConnection;
+type ApiReturnType = ApiPromise | TypedApi<any> | { api: TypedApi<any>, client: PolkadotClient };
 
 interface IApiWrapper {
-    connect(rpcUrl: string): Promise<ApiReturnType>;
-    getApi(): ApiPromise | TypedApi<any> | null;
+  connect(rpcUrl: string): Promise<ApiReturnType>;
+  getApi(): ApiPromise | TypedApi<any> | null;
 }
 
 class PolkadotApiWrapper implements IApiWrapper {
-    private api: ApiPromise | null = null;
-    private currentUrl: string | null = null;
+  private api: ApiPromise | null = null;
+  private currentUrl: string | null = null;
 
-    async connect(rpcUrl: string): Promise<ApiPromise> {
-        try {
-            if (!this.api || this.currentUrl !== rpcUrl) {
-                const provider = new WsProvider(rpcUrl);
-                this.api = await ApiPromise.create({ provider });
-                this.currentUrl = rpcUrl;
-                console.log(`Connected to ${rpcUrl} using Polkadot API`);
-            }
-            return this.api;
-        } catch (error) {
-            console.error(`Failed to connect to ${rpcUrl} using Polkadot API:`, error);
-            throw new Error(`Connection failed: ${error.message}`);
-        }
+  async connect(rpcUrl: string): Promise<ApiPromise> {
+    try {
+      if (!this.api || this.currentUrl !== rpcUrl) {
+        const provider = new WsProvider(rpcUrl);
+        this.api = await ApiPromise.create({ provider });
+        this.currentUrl = rpcUrl;
+        console.log(`Connected to ${rpcUrl} using Polkadot API`);
+      }
+      return this.api;
+    } catch (error) {
+      console.error(`Failed to connect to ${rpcUrl} using Polkadot API:`, error);
+      throw new Error(`Connection failed: ${error.message}`);
     }
+  }
 
-    getApi(): ApiPromise | null {
-        return this.api;
-    }
+  getApi(): ApiPromise | null {
+    return this.api;
+  }
 }
 
 class PapiWrapper implements IApiWrapper {
-    private client: ReturnType<typeof createClient> | null = null;
-    private typedApi: TypedApi<any> | null = null;
-    private currentUrl: string | null = null;
+  private client: ReturnType<typeof createClient> | null = null;
+  private typedApi: TypedApi<any> | null = null;
+  private currentUrl: string | null = null;
 
-    async connect(rpcUrl: string): Promise<{ api: TypedApi<any>, client: PolkadotClient }> {
-        try {
-            if (!this.client || this.currentUrl !== rpcUrl) {
-                this.client = createClient(
-                    withPolkadotSdkCompat(getWsProvider(rpcUrl))
-                );
-                this.typedApi = this.client.getTypedApi(polkadot_asset_hub);
-                this.currentUrl = rpcUrl;
-                console.log(`Connected to ${rpcUrl} using PAPI`);
-            }
-            if (!this.typedApi || !this.client) {
-                throw new Error('Failed to initialize PAPI client');
-            }
-            return { 
-                api: this.typedApi, 
-                client: this.client 
-            };
-        } catch (error) {
-            console.error(`Failed to connect to ${rpcUrl} using PAPI:`, error);
-            throw new Error(`Connection failed: ${error.message}`);
-        }
+  async connect(rpcUrl: string): Promise<{ api: TypedApi<any>, client: PolkadotClient }> {
+    try {
+      if (!this.client || this.currentUrl !== rpcUrl) {
+        this.client = createClient(
+          withPolkadotSdkCompat(getWsProvider(rpcUrl))
+        );
+        this.typedApi = this.client.getTypedApi(polkadot_asset_hub);
+        this.currentUrl = rpcUrl;
+        console.log(`Connected to ${rpcUrl} using PAPI`);
+      }
+      if (!this.typedApi || !this.client) {
+        throw new Error('Failed to initialize PAPI client');
+      }
+      return { 
+        api: this.typedApi, 
+        client: this.client 
+      };
+    } catch (error) {
+      console.error(`Failed to connect to ${rpcUrl} using PAPI:`, error);
+      throw new Error(`Connection failed: ${error.message}`);
     }
+  }
 
-    getApi(): TypedApi<any> | null {
-        return this.typedApi;
-    }
+  getApi(): TypedApi<any> | null {
+    return this.typedApi;
+  }
 }
 
 class RpcConnection {
-    private static instances: Map<ApiType, RpcConnection> = new Map();
-    private apiWrapper: IApiWrapper;
+  private static instances: Map<ApiType, RpcConnection> = new Map();
+  private apiWrapper: IApiWrapper;
 
-    private constructor(apiType: ApiType) {
-        this.apiWrapper = apiType === 'polkadotjs' 
-            ? new PolkadotApiWrapper() 
-            : new PapiWrapper();
-    }
+  private constructor(apiType: ApiType) {
+    this.apiWrapper = apiType === 'polkadotjs' 
+      ? new PolkadotApiWrapper() 
+      : new PapiWrapper();
+  }
 
-    public static getInstance(apiType: ApiType): RpcConnection {
-        if (!this.instances.has(apiType)) {
-            this.instances.set(apiType, new RpcConnection(apiType));
-        }
-        return this.instances.get(apiType)!;
+  public static getInstance(apiType: ApiType): RpcConnection {
+    if (!this.instances.has(apiType)) {
+      this.instances.set(apiType, new RpcConnection(apiType));
     }
+    return this.instances.get(apiType)!;
+  }
 
-    // For testing purposes
-    public static clearInstances(): void {
-        this.instances.clear();
-    }
+  // For testing purposes
+  public static clearInstances(): void {
+    this.instances.clear();
+  }
 
-    public async connect(rpcUrl: string): Promise<ApiReturnType> {
-        return this.apiWrapper.connect(rpcUrl);
-    }
+  public async connect(rpcUrl: string): Promise<ApiReturnType> {
+    return this.apiWrapper.connect(rpcUrl);
+  }
 
-    public getApi(): ApiPromise | TypedApi<any> | null {
-        return this.apiWrapper.getApi();
-    }
+  public getApi(): ApiPromise | TypedApi<any> | null {
+    return this.apiWrapper.getApi();
+  }
 }
 
 export default RpcConnection;

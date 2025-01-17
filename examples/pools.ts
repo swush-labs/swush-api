@@ -1,9 +1,9 @@
-import RpcConnection, { isPapiConnection } from "../services/network/RpcConnection";
 import { RPC_URL } from "../services/constants";
 import { SS58String, TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub, XcmV3Junction, XcmV3Junctions } from '@polkadot-api/descriptors';
 import fs from 'fs';
 import CacheManager from '../services/cache/CacheManager';
+import { connectPapi } from "../services/network/types";
 
 //enum for asset type
 enum AssetType {
@@ -270,14 +270,8 @@ async function fetchPoolsPapi(
 
 async function main() {
     try {
-        const papiConn = RpcConnection.getInstance('papi');
-        const result = await papiConn.connect(RPC_URL);
-        
-        if (!isPapiConnection(result)) {
-            throw new Error('Invalid connection type');
-        }
-        
-        const { api, client } = result;
+        const { api, client } = await connectPapi(RPC_URL);
+
         await fetchAllAssetsPapi(api);
         client.destroy();
     } catch (error) {

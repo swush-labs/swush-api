@@ -1,5 +1,7 @@
-import RpcConnection, { isPapiConnection } from "../services/network/RpcConnection";
 import { RPC_URL } from "../services/constants";
+
+import { connectPapi } from '../services/network/types';
+import RpcConnection from '../services/network/RpcConnection';
 
 interface AssetMetadata {
     symbol: string;
@@ -11,14 +13,7 @@ interface AssetMetadata {
 
 async function main() {
     try {
-        const papiConn = RpcConnection.getInstance('papi');
-        const result = await papiConn.connect(RPC_URL);
-        
-        if (!isPapiConnection(result)) {
-            throw new Error('Invalid connection type');
-        }
-        
-        const { api, client } = result;
+        const { api, client } = await connectPapi(RPC_URL);
         
         const assetConversionAssets = await api.query.Assets.Metadata.getEntries();
         assetConversionAssets.forEach((asset) => {
