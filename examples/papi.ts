@@ -5,6 +5,14 @@ import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 
 // Using PAPI
 
+interface AssetMetadata {
+    symbol: string;
+    deposit: bigint;
+    name: string;
+    decimals: number;
+    is_frozen: boolean;
+  }
+
 async function main() {
     try {
         const papiConn = RpcConnection.getInstance('papi');
@@ -12,13 +20,14 @@ async function main() {
 
         const assetConversionAssets = await dotApi.query.Assets.Metadata.getEntries();
         assetConversionAssets.forEach((asset) => {
-
-            //print all the assets metadata
-            console.log(asset.value.symbol.asText());
-            console.log(asset.value.name.asText());
-            console.log(asset.value.decimals);
-            console.log(asset.value.is_frozen);
-            console.log(asset.value.deposit);
+            const metadata: AssetMetadata = {
+                symbol: asset.value.symbol.asText(),
+                deposit: asset.value.deposit,
+                name: asset.value.name.asText(),
+                decimals: asset.value.decimals,
+                is_frozen: asset.value.is_frozen
+            };
+            console.log(metadata);
         });
     } catch (error) {
         console.error("Error connecting to PAPI:", error);

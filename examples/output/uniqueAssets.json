@@ -7,19 +7,18 @@
       "freezer": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
       "supply": "2199999301527422",
       "deposit": "100000000000",
-      "minBalance": "1",
-      "isSufficient": false,
-      "accounts": "21909",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 21909,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007600000",
       "name": "DOTA",
       "symbol": "DOTA",
-      "decimals": "4",
-      "isFrozen": false
+      "decimals": 4,
+      "is_frozen": false
     }
   },
   "23": {
@@ -30,19 +29,18 @@
       "freezer": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
       "supply": "22994446422708564040",
       "deposit": "100000000000",
-      "minBalance": "1",
-      "isSufficient": false,
-      "accounts": "718",
-      "sufficients": "0",
-      "approvals": "3",
-      "status": "Live"
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 717,
+      "sufficients": 0,
+      "approvals": 3
     },
     "metadata": {
       "deposit": "2007600000",
       "name": "PINK",
       "symbol": "PINK",
-      "decimals": "10",
-      "isFrozen": false
+      "decimals": 10,
+      "is_frozen": false
     }
   },
   "30": {
@@ -53,19 +51,18 @@
       "freezer": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
       "supply": "9999999594298900000000",
       "deposit": "100000000000",
-      "minBalance": "1",
-      "isSufficient": false,
-      "accounts": "1307163",
-      "sufficients": "0",
-      "approvals": "2",
-      "status": "Live"
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 1307156,
+      "sufficients": 0,
+      "approvals": 2
     },
     "metadata": {
       "deposit": "2007400000",
       "name": "DED",
       "symbol": "DED",
-      "decimals": "10",
-      "isFrozen": false
+      "decimals": 10,
+      "is_frozen": false
     }
   },
   "111": {
@@ -76,19 +73,18 @@
       "freezer": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
       "supply": "1000000000000",
       "deposit": "2019000000",
-      "minBalance": "10000",
-      "isSufficient": false,
-      "accounts": "5",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "10000",
+      "is_sufficient": false,
+      "accounts": 5,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007600000",
       "name": "DEMO",
       "symbol": "DEMO",
-      "decimals": "6",
-      "isFrozen": false
+      "decimals": 6,
+      "is_frozen": false
     }
   },
   "1148": {
@@ -99,19 +95,18 @@
       "freezer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
       "supply": "10000000000000",
       "deposit": "2019000000",
-      "minBalance": "10000000000",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "10000000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008400000",
       "name": "Nikola Test 2",
       "symbol": "NT2",
-      "decimals": "10",
-      "isFrozen": false
+      "decimals": 10,
+      "is_frozen": false
     }
   },
   "1313": {
@@ -122,19 +117,18 @@
       "freezer": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
       "supply": "100000000",
       "deposit": "2019000000",
-      "minBalance": "100",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Frozen"
+      "min_balance": "100",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007500000",
       "name": "Gagi",
       "symbol": "GGI",
-      "decimals": "6",
-      "isFrozen": false
+      "decimals": 6,
+      "is_frozen": false
     }
   },
   "1337": {
@@ -145,19 +139,18 @@
       "freezer": "12amXH9jF3ob2EqE1a44NKnoFdxz6qsXzmYY17pT84764dLL",
       "supply": "350019960831940",
       "deposit": "100000000000",
-      "minBalance": "10000",
-      "isSufficient": true,
-      "accounts": "1810",
-      "sufficients": "1794",
-      "approvals": "2",
-      "status": "Live"
+      "min_balance": "10000",
+      "is_sufficient": true,
+      "accounts": 1846,
+      "sufficients": 1830,
+      "approvals": 2
     },
     "metadata": {
       "deposit": "2008000000",
       "name": "USD Coin",
       "symbol": "USDC",
-      "decimals": "6",
-      "isFrozen": false
+      "decimals": 6,
+      "is_frozen": false
     }
   },
   "1984": {
@@ -168,19 +161,18 @@
       "freezer": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
       "supply": "77998715321907",
       "deposit": "1000000000000",
-      "minBalance": "10000",
-      "isSufficient": true,
-      "accounts": "9189",
-      "sufficients": "9080",
-      "approvals": "14",
-      "status": "Live"
+      "min_balance": "10000",
+      "is_sufficient": true,
+      "accounts": 9318,
+      "sufficients": 9209,
+      "approvals": 14
     },
     "metadata": {
       "deposit": "2008200000",
       "name": "Tether USD",
       "symbol": "USDt",
-      "decimals": "6",
-      "isFrozen": false
+      "decimals": 6,
+      "is_frozen": false
     }
   },
   "3164": {
@@ -191,19 +183,18 @@
       "freezer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
       "supply": "1000000",
       "deposit": "2019000000",
-      "minBalance": "100000",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "100000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007900000",
       "name": "TestTest",
       "symbol": "TTT",
-      "decimals": "3",
-      "isFrozen": false
+      "decimals": 3,
+      "is_frozen": false
     }
   },
   "5361": {
@@ -214,19 +205,18 @@
       "freezer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
       "supply": "100000000000000",
       "deposit": "2019000000",
-      "minBalance": "10000000000",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "10000000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008200000",
       "name": "Nikola Test",
       "symbol": "NAT",
-      "decimals": "10",
-      "isFrozen": false
+      "decimals": 10,
+      "is_frozen": false
     }
   },
   "6594": {
@@ -237,19 +227,18 @@
       "freezer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
       "supply": "10000000",
       "deposit": "2019000000",
-      "minBalance": "1000000",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008100000",
       "name": "MVPW Test",
       "symbol": "MVPW",
-      "decimals": "3",
-      "isFrozen": false
+      "decimals": 3,
+      "is_frozen": false
     }
   },
   "42069": {
@@ -260,19 +249,18 @@
       "freezer": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
       "supply": "22996383897549355766",
       "deposit": "100000000000",
-      "minBalance": "1000000",
-      "isSufficient": false,
-      "accounts": "293",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000",
+      "is_sufficient": false,
+      "accounts": 293,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007800000",
       "name": "STINK",
       "symbol": "STINK",
-      "decimals": "10",
-      "isFrozen": false
+      "decimals": 10,
+      "is_frozen": false
     }
   },
   "112233": {
@@ -283,19 +271,18 @@
       "freezer": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
       "supply": "247000000000000",
       "deposit": "2019000000",
-      "minBalance": "10000000000",
-      "isSufficient": false,
-      "accounts": "5",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "10000000000",
+      "is_sufficient": false,
+      "accounts": 5,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008400000",
       "name": "My Test Coin ",
       "symbol": "MTC",
-      "decimals": "10",
-      "isFrozen": false
+      "decimals": 10,
+      "is_frozen": false
     }
   },
   "22222030": {
@@ -306,19 +293,18 @@
       "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
       "supply": "100000000000000000000",
       "deposit": "2019000000",
-      "minBalance": "1000000000000",
-      "isSufficient": false,
-      "accounts": "3",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008100000",
       "name": "Pink Pigs",
       "symbol": "PIGS",
-      "decimals": "12",
-      "isFrozen": false
+      "decimals": 12,
+      "is_frozen": false
     }
   },
   "22222051": {
@@ -329,19 +315,18 @@
       "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
       "supply": "50000000000000000000",
       "deposit": "2019000000",
-      "minBalance": "1000000000000",
-      "isSufficient": false,
-      "accounts": "3",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008100000",
       "name": "synergy AI",
       "symbol": "NIN",
-      "decimals": "12",
-      "isFrozen": false
+      "decimals": 12,
+      "is_frozen": false
     }
   },
   "22222052": {
@@ -352,19 +337,18 @@
       "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
       "supply": "50000000000000000000",
       "deposit": "2019000000",
-      "minBalance": "1000000000000",
-      "isSufficient": false,
-      "accounts": "3",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2009200000",
       "name": "Quant Full Potato.AI",
       "symbol": "MODE",
-      "decimals": "12",
-      "isFrozen": false
+      "decimals": 12,
+      "is_frozen": false
     }
   },
   "22222060": {
@@ -375,19 +359,18 @@
       "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
       "supply": "84000000000000000000",
       "deposit": "2019000000",
-      "minBalance": "1000000000000",
-      "isSufficient": false,
-      "accounts": "3",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008300000",
       "name": "Thunderdome",
       "symbol": "TATE",
-      "decimals": "12",
-      "isFrozen": false
+      "decimals": 12,
+      "is_frozen": false
     }
   },
   "50000058": {
@@ -398,22 +381,21 @@
       "freezer": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
       "supply": "1000000000000000000000000000",
       "deposit": "2019000000",
-      "minBalance": "100000000",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "100000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2008100000",
       "name": "G Token",
       "symbol": "GTOKEN",
-      "decimals": "18",
-      "isFrozen": false
+      "decimals": 18,
+      "is_frozen": false
     }
   },
-  "{\"parents\":\"1\",\"interior\":{\"X2\":[{\"Parachain\":\"2004\"},{\"PalletInstance\":\"10\"}]}}": {
+  "1-{\"type\":\"X2\",\"value\":[{\"type\":\"Parachain\",\"value\":2004},{\"type\":\"PalletInstance\",\"value\":10}]}": {
     "asset": {
       "owner": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
       "issuer": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
@@ -421,68 +403,65 @@
       "freezer": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
       "supply": "0",
       "deposit": "100000000000",
-      "minBalance": "1",
-      "isSufficient": false,
-      "accounts": "1",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 1,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007900000",
       "name": "Glimmer",
       "symbol": "GLMR",
-      "decimals": "18",
-      "isFrozen": false
+      "decimals": 18,
+      "is_frozen": false
     }
   },
-  "{\"parents\":\"2\",\"interior\":{\"X2\":[{\"GlobalConsensus\":{\"Ethereum\":{\"chainId\":\"1\"}}},{\"AccountKey20\":{\"network\":null,\"key\":\"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\"}}]}}": {
+  "2-{\"type\":\"X2\",\"value\":[{\"type\":\"GlobalConsensus\",\"value\":{\"type\":\"Ethereum\",\"value\":{\"chain_id\":\"1\"}}},{\"type\":\"AccountKey20\",\"value\":{\"key\":{}}}]}": {
     "asset": {
       "owner": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
       "issuer": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
       "admin": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
       "freezer": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
-      "supply": "612910700032071586571",
+      "supply": "920158397313206060982",
       "deposit": "2019000000",
-      "minBalance": "15000000000000",
-      "isSufficient": true,
-      "accounts": "74",
-      "sufficients": "58",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 1,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "0",
       "name": "Wrapped Ether",
       "symbol": "WETH",
-      "decimals": "18",
-      "isFrozen": false
+      "decimals": 18,
+      "is_frozen": false
     }
   },
-  "{\"parents\":\"1\",\"interior\":{\"X1\":[{\"Parachain\":\"3369\"}]}}": {
+  "1-{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":3369}}": {
     "asset": {
       "owner": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "issuer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "admin": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "freezer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
-      "supply": "13648101106982208400172922",
+      "supply": "13644154828552103731010974",
       "deposit": "2019000000",
-      "minBalance": "10000000000000000",
-      "isSufficient": false,
-      "accounts": "473498",
-      "sufficients": "0",
-      "approvals": "3",
-      "status": "Live"
+      "min_balance": "10000000000000000",
+      "is_sufficient": false,
+      "accounts": 473456,
+      "sufficients": 0,
+      "approvals": 3
     },
     "metadata": {
       "deposit": "2007800000",
       "name": "Mythos",
       "symbol": "MYTH",
-      "decimals": "18",
-      "isFrozen": false
+      "decimals": 18,
+      "is_frozen": false
     }
   },
-  "{\"parents\":\"2\",\"interior\":{\"X1\":[{\"GlobalConsensus\":\"Kusama\"}]}}": {
+  "2-{\"type\":\"X1\",\"value\":{\"type\":\"GlobalConsensus\",\"value\":{\"type\":\"Kusama\"}}}": {
     "asset": {
       "owner": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
       "issuer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
@@ -490,22 +469,21 @@
       "freezer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
       "supply": "10073481869248",
       "deposit": "0",
-      "minBalance": "1000000000",
-      "isSufficient": true,
-      "accounts": "26",
-      "sufficients": "26",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000000",
+      "is_sufficient": true,
+      "accounts": 26,
+      "sufficients": 26,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "0",
       "name": "Kusama",
       "symbol": "KSM",
-      "decimals": "12",
-      "isFrozen": false
+      "decimals": 12,
+      "is_frozen": false
     }
   },
-  "{\"parents\":\"1\",\"interior\":{\"X1\":[{\"Parachain\":\"2051\"}]}}": {
+  "1-{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":2051}}": {
     "asset": {
       "owner": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
       "issuer": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
@@ -513,42 +491,40 @@
       "freezer": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
       "supply": "500000000000",
       "deposit": "2019000000",
-      "minBalance": "1000000000",
-      "isSufficient": false,
-      "accounts": "2",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1000000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2009100000",
       "name": "Ajuna Polkadot AJUN",
       "symbol": "AJUN",
-      "decimals": "12",
-      "isFrozen": false
+      "decimals": 12,
+      "is_frozen": false
     }
   },
-  "{\"parents\":\"1\",\"interior\":{\"X1\":[{\"Parachain\":\"3370\"}]}}": {
+  "1-{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":3370}}": {
     "asset": {
       "owner": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
       "issuer": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
       "admin": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
       "freezer": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
-      "supply": "50201953817597571447565",
+      "supply": "73252953817597571447565",
       "deposit": "2019000000",
-      "minBalance": "1",
-      "isSufficient": false,
-      "accounts": "4",
-      "sufficients": "0",
-      "approvals": "0",
-      "status": "Live"
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 6,
+      "sufficients": 0,
+      "approvals": 0
     },
     "metadata": {
       "deposit": "2007600000",
       "name": "LAOS",
       "symbol": "LAOS",
-      "decimals": "18",
-      "isFrozen": false
+      "decimals": 18,
+      "is_frozen": false
     }
   }
 }
