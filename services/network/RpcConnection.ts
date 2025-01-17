@@ -82,7 +82,7 @@ class PapiWrapper implements IApiWrapper {
 }
 
 class RpcConnection {
-  private static instance: RpcConnection;
+  private static instances: Map<ApiType, RpcConnection> = new Map();
   private apiWrapper: IApiWrapper;
 
   private constructor(apiType: ApiType) {
@@ -92,10 +92,15 @@ class RpcConnection {
   }
 
   public static getInstance(apiType: ApiType): RpcConnection {
-    if (!RpcConnection.instance) {
-      RpcConnection.instance = new RpcConnection(apiType);
+    if (!this.instances.has(apiType)) {
+      this.instances.set(apiType, new RpcConnection(apiType));
     }
-    return RpcConnection.instance;
+    return this.instances.get(apiType)!;
+  }
+
+  // For testing purposes
+  public static clearInstances(): void {
+    this.instances.clear();
   }
 
   public async connect(rpcUrl: string): Promise<ApiPromise | TypedApi<any>> {
