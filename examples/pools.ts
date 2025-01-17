@@ -5,9 +5,17 @@ import { polkadot_asset_hub, XcmV3Junction, XcmV3Junctions } from '@polkadot-api
 import fs from 'fs';
 import CacheManager from '../services/cache/CacheManager';
 
+//enum for asset type
+enum AssetType {
+    Native = 'Native',
+    Foreign = 'Foreign'
+}
+
 export type Asset = {
     asset: AssetInfo;
     metadata: AssetMetadata;
+    type: AssetType;
+    xcmLocation: XcmV4Location;
 };
 
 export type AssetMetadata = {
@@ -41,6 +49,17 @@ export type TokenPair = {
     pairOne: XcmV4Location;
     pairTwo: XcmV4Location;
 };
+
+// getXcmV3Multilocation for native asset from assetId
+export function getXcmV3Multilocation(assetId: string): XcmV4Location {
+    return {
+        parents: 0,
+        interior: XcmV3Junctions.X2([
+            XcmV3Junction.PalletInstance(50),
+            XcmV3Junction.GeneralIndex(BigInt(assetId)),
+        ]),
+    };
+}
 
 function serializeKey(key: any): string {
     // If key is a number or bigint, convert directly to string
@@ -120,7 +139,9 @@ async function fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>) {
                     symbol: metadata.symbol.asText(),
                     decimals: metadata.decimals,
                     is_frozen: metadata.is_frozen
-                }
+                },
+                type: AssetType.Native,
+                xcmLocation: getXcmV3Multilocation(assetId)
             };
             nativeAssetsMap.set(assetId, assetDetails);
         }
@@ -152,7 +173,9 @@ async function fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>) {
                     symbol: metadata.symbol.asText(),
                     decimals: metadata.decimals,
                     is_frozen: metadata.is_frozen
-                }
+                },
+                type: AssetType.Foreign,
+                xcmLocation: foreignAsset.keyArgs[0]
             };
             foreignAssetsMap.set(assetId, assetDetails);
         }
