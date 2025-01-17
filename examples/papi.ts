@@ -1,9 +1,7 @@
 import RpcConnection from "../services/network/RpcConnection";
 import { RPC_URL } from "../services/constants";
-import { TypedApi } from 'polkadot-api';
+import { PolkadotClient, TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
-
-// Using PAPI
 
 interface AssetMetadata {
     symbol: string;
@@ -11,14 +9,30 @@ interface AssetMetadata {
     name: string;
     decimals: number;
     is_frozen: boolean;
-  }
+}
+
+interface PapiConnection {
+    api: TypedApi<typeof polkadot_asset_hub>;
+    client: PolkadotClient;
+}
+
+// Type predicate function
+function isPapiConnection(result: any): result is PapiConnection {
+    return result && 'api' in result && 'client' in result;
+}
 
 async function main() {
     try {
         const papiConn = RpcConnection.getInstance('papi');
-        const dotApi = await papiConn.connect(RPC_URL) as TypedApi<typeof polkadot_asset_hub>;
-
-        const assetConversionAssets = await dotApi.query.Assets.Metadata.getEntries();
+        const result = await papiConn.connect(RPC_URL);
+        
+        if (!isPapiConnection(result)) {
+            throw new Error('Invalid connection type');
+        }
+        
+        const { api, client } = result;
+        
+        const assetConversionAssets = await api.query.Assets.Metadata.getEntries();
         assetConversionAssets.forEach((asset) => {
             const metadata: AssetMetadata = {
                 symbol: asset.value.symbol.asText(),
@@ -29,8 +43,11 @@ async function main() {
             };
             console.log(metadata);
         });
+        client.destroy();
     } catch (error) {
         console.error("Error connecting to PAPI:", error);
+    } finally {
+        RpcConnection.clearInstances();
     }
 }
 

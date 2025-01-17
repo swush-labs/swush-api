@@ -1,6 +1,6 @@
 // services/RpcConnection.ts
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { createClient, TypedApi } from 'polkadot-api';
+import { createClient, PolkadotClient, TypedApi } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws-provider/node';
 import { withPolkadotSdkCompat } from 'polkadot-api/polkadot-sdk-compat';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
@@ -22,8 +22,10 @@ const papiApi = papiConn.getApi();
 
 type ApiType = 'polkadotjs' | 'papi';
 
+type ApiReturnType = ApiPromise | TypedApi<any> | { api: TypedApi<any>, client: PolkadotClient };
+
 interface IApiWrapper {
-  connect(rpcUrl: string): Promise<ApiPromise | TypedApi<any>>;
+  connect(rpcUrl: string): Promise<ApiReturnType>;
   getApi(): ApiPromise | TypedApi<any> | null;
 }
 
@@ -56,7 +58,7 @@ class PapiWrapper implements IApiWrapper {
   private typedApi: TypedApi<any> | null = null;
   private currentUrl: string | null = null;
 
-  async connect(rpcUrl: string): Promise<TypedApi<any>> {
+  async connect(rpcUrl: string): Promise<{ api: TypedApi<any>, client: PolkadotClient }> {
     try {
       if (!this.client || this.currentUrl !== rpcUrl) {
         this.client = createClient(
@@ -66,10 +68,13 @@ class PapiWrapper implements IApiWrapper {
         this.currentUrl = rpcUrl;
         console.log(`Connected to ${rpcUrl} using PAPI`);
       }
-      if (!this.typedApi) {
+      if (!this.typedApi || !this.client) {
         throw new Error('Failed to initialize PAPI client');
       }
-      return this.typedApi;
+      return { 
+        api: this.typedApi, 
+        client: this.client 
+      };
     } catch (error) {
       console.error(`Failed to connect to ${rpcUrl} using PAPI:`, error);
       throw new Error(`Connection failed: ${error.message}`);
@@ -103,7 +108,7 @@ class RpcConnection {
     this.instances.clear();
   }
 
-  public async connect(rpcUrl: string): Promise<ApiPromise | TypedApi<any>> {
+  public async connect(rpcUrl: string): Promise<ApiReturnType> {
     return this.apiWrapper.connect(rpcUrl);
   }
 

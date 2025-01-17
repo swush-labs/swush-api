@@ -72,11 +72,15 @@ describe('RpcConnection', () => {
 
     describe('PAPI', () => {
         it('should create PAPI connection', async () => {
-            const api = await papiConnection.connect(mockRpcUrl);
+            const result = await papiConnection.connect(mockRpcUrl);
             expect(createClient).toHaveBeenCalled();
             expect(mockPapiClient.getTypedApi).toHaveBeenCalledWith(polkadot_asset_hub);
-            expect(api).toBe(mockPapiTypedApi);
+            expect(result).toEqual({
+                api: mockPapiTypedApi,
+                client: mockPapiClient
+            });
         });
+
 
         it('should reuse existing PAPI connection', async () => {
             await papiConnection.connect(mockRpcUrl);
