@@ -1,7 +1,5 @@
-import RpcConnection from "../services/network/RpcConnection";
+import RpcConnection, { isPapiConnection } from "../services/network/RpcConnection";
 import { RPC_URL } from "../services/constants";
-import { PolkadotClient, TypedApi } from 'polkadot-api';
-import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 
 interface AssetMetadata {
     symbol: string;
@@ -9,16 +7,6 @@ interface AssetMetadata {
     name: string;
     decimals: number;
     is_frozen: boolean;
-}
-
-interface PapiConnection {
-    api: TypedApi<typeof polkadot_asset_hub>;
-    client: PolkadotClient;
-}
-
-// Type predicate function
-function isPapiConnection(result: any): result is PapiConnection {
-    return result && 'api' in result && 'client' in result;
 }
 
 async function main() {
