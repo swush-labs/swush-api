@@ -11,7 +11,7 @@ import { RPC_URL, TEST_RPC, TEST_RPC_ASSET_HUB, TEST_RPC_PARACHAIN_HYDRATION } f
 import { connectPapi } from "../../services/network/types"
 import { MultiAddress } from "@polkadot-api/descriptors"
 import WebSocket from 'ws';
-import { teleportAssetHubToPara } from "./xcmApi"
+import { transferFromAssetHubToPara } from "./xcmApi"
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 0.1 DOT in planck units
@@ -107,7 +107,7 @@ async function main() {
     try {
         // Setup addresses
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0)
-        const BOB = ss58Encode(bobKeyPair.publicKey, 63)
+        const BOB = ss58Encode(bobKeyPair.publicKey, 63) // 7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw
 
         console.log("Alice address:", ALICE)
         console.log("Bob address:", BOB)
@@ -119,7 +119,7 @@ async function main() {
         console.log(`Sending ${Number(TRANSFER_AMOUNT) / 1e10} DOT from Asset Hub to Hydration (ParaID 2034)`)
         
         // Create and submit XCM transfer
-        const xcmTx = teleportAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
+        const xcmTx = transferFromAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
         console.log("Created XCM transfer transaction")
         
         await submitAndWaitForTx(xcmTx, alice)
