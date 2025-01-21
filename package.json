@@ -13,11 +13,17 @@
     "test:network": "jest services/network/__tests__"
   },
   "dependencies": {
+    "@acala-network/chopsticks": "^1.0.1",
+    "@acala-network/chopsticks-core": "^1.0.1",
+    "@acala-network/chopsticks-testing": "^1.0.1",
+    "@acala-network/chopsticks-utils": "^1.0.1",
     "@galacticcouncil/api-augment": "^0.3.0",
     "@galacticcouncil/sdk": "^5.1.0",
     "@galacticcouncil/xcm-cfg": "^6.0.1",
     "@galacticcouncil/xcm-sdk": "^7.0.1",
     "@polkadot-api/descriptors": "file:.papi\\descriptors",
+    "@polkadot-labs/hdkd": "^0.0.10",
+    "@polkadot-labs/hdkd-helpers": "^0.0.10",
     "@polkadot/api": "^15.1.1",
     "@polkadot/types": "^15.1.1",
     "@polkadot/types-augment": "^15.2.1",
@@ -25,8 +31,10 @@
     "@polkadot/util-crypto": "^13.2.3",
     "@substrate/asset-transfer-api": "^0.4.5",
     "@substrate/asset-transfer-api-registry": "^0.2.25",
+    "@types/ws": "^8.5.13",
     "polkadot-api": "^1.8.2",
-    "viem": "^2.22.2"
+    "viem": "^2.22.2",
+    "ws": "^8.18.0"
   },
   "pnpm": {
     "overrides": {
