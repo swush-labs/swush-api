@@ -3,6 +3,7 @@ import {
   DEV_PHRASE,
   entropyToMiniSecret,
   mnemonicToEntropy,
+  ss58Decode,
   ss58Encode
 } from "@polkadot-labs/hdkd-helpers"
 import { getPolkadotSigner } from "polkadot-api/signer"
@@ -10,96 +11,138 @@ import { RPC_URL, TEST_RPC, TEST_RPC_ASSET_HUB, TEST_RPC_PARACHAIN_HYDRATION } f
 import { connectPapi } from "../../services/network/types"
 import { MultiAddress } from "@polkadot-api/descriptors"
 import WebSocket from 'ws';
-import { teleportRelayToPara } from "./xcmApi"
-// let's create Alice signer
-const miniSecret = entropyToMiniSecret(mnemonicToEntropy(DEV_PHRASE))
-const derive = sr25519CreateDerive(miniSecret)
-const aliceKeyPair = derive("//Alice")
-const bobKeyPair = derive("//Bob")
-const alice = getPolkadotSigner(
-  aliceKeyPair.publicKey,
-  "Sr25519",
-  aliceKeyPair.sign,
-)
+import { teleportAssetHubToPara } from "./xcmApi"
 
-// Connect to relay chain for block production
+// Constants
+const TRANSFER_AMOUNT = 100_000_000_000_000n // 0.1 DOT in planck units
+const BLOCK_PRODUCTION_COUNT = 2
+const TRANSACTION_WAIT_TIME = 5000 // 5 seconds
 
-// const wsHydration = new WebSocket(TEST_RPC_PARACHAIN_HYDRATION);
-// wsHydration.on('open', () => {
-//     console.log('Connected to Hydration Chain WebSocket');
-// });
+// Initialize signers
+const initSigners = () => {
+    const miniSecret = entropyToMiniSecret(mnemonicToEntropy(DEV_PHRASE))
+    const derive = sr25519CreateDerive(miniSecret)
+    
+    const aliceKeyPair = derive("//Alice")
+    const bobKeyPair = derive("//Bob")
+    
+    const alice = getPolkadotSigner(
+        aliceKeyPair.publicKey,
+        "Sr25519",
+        aliceKeyPair.sign,
+    )
 
-const wsAssetHub = new WebSocket(TEST_RPC_ASSET_HUB);
-wsAssetHub.on('open', () => {
-    console.log('Connected to Asset Hub WebSocket');
-});
-
-const sendCommand = (method: string, params: any) => {
-    const message = JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: method,
-        params: params,
-    });
-//    wsHydration.send(message);  // Send to relay chain
-    wsAssetHub.send(message); // Send to asset hub
+    return {
+        alice,
+        aliceKeyPair,
+        bobKeyPair
+    }
 }
 
-const setStorage = (key: string, value: string) => {
-    sendCommand('state_setStorage', [key, value]);
+// WebSocket connection manager
+class WSManager {
+    private connections: Map<string, WebSocket> = new Map()
+
+    connect(endpoint: string, name: string) {
+        const ws = new WebSocket(endpoint)
+        ws.on('open', () => {
+            console.log(`Connected to ${name} WebSocket`)
+        })
+        this.connections.set(name, ws)
+        return ws
+    }
+
+    sendCommand(method: string, params: any) {
+        const message = JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method,
+            params,
+        })
+        
+        this.connections.forEach((ws, name) => {
+            console.log(`Sending command to ${name}`)
+            ws.send(message)
+        })
+    }
+
+    close() {
+        this.connections.forEach(ws => ws.close())
+    }
 }
 
+// Transaction helper
+const submitAndWaitForTx = (tx: any, signer: any) => {
+    return new Promise((resolve, reject) => {
+        tx.call.signSubmitAndWatch(signer).subscribe({
+            next: (event: any) => {
+                console.log("XCM Tx event: ", event.type)
+                if (event.type === "txBestBlocksState") {
+                    console.log("XCM transfer in block:", event.txHash)
+                    resolve(event)
+                }
+            },
+            error: (err: any) => {
+                console.error("XCM transfer failed:", err)
+                reject(err)
+            }
+        })
+    })
+}
 
 async function main() {
-    const { api, client } = await connectPapi(TEST_RPC_ASSET_HUB);
-    const ALICE = ss58Encode(aliceKeyPair.publicKey, 0)
+    // Initialize WebSocket manager
+    const wsManager = new WSManager()
+    const RPC = TEST_RPC_ASSET_HUB
+    wsManager.connect(RPC, 'AssetHub')
+    // Uncomment to enable Hydration chain
+    wsManager.connect(TEST_RPC_PARACHAIN_HYDRATION, 'Hydration')
+
+    // Initialize signers
+    const { alice, aliceKeyPair, bobKeyPair } = initSigners()
+
+    // Connect to API
+    const { api, client } = await connectPapi(RPC)
     
-    // Check initial balance
-    const initialBalance = await api.query.System.Account.getValue(ALICE)
-    console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
+    try {
+        // Setup addresses
+        const ALICE = ss58Encode(aliceKeyPair.publicKey, 0)
+        const BOB = ss58Encode(bobKeyPair.publicKey, 63)
 
-    // Set a clear transfer amount - 100 DOT
-    const transferAmount = 100_000_000_000n // 100 DOT in planck units (100 * 10^10)
-    
-    console.log("Sending XCM transfer to Asset Hub (ParaID 1000)")
-    // Initiate XCM transfer to Asset Hub (ParaID 1000)
-    const BOB = ss58Encode(bobKeyPair.publicKey, 0)
-    // await teleportRelayToPara(api, 2034, BOB, transferAmount)
-    await sendToBob(api, transferAmount)
-    // Produce new blocks to process the XCM (one for relay chain, one for parachain)
-    sendCommand('dev_newBlock',[{ count: 2}])
+        console.log("Alice address:", ALICE)
+        console.log("Bob address:", BOB)
 
-    // Wait a bit for the transfer to process
-    await new Promise(resolve => setTimeout(resolve, 10000))
+        // Check initial balance
+        const initialBalance = await api.query.System.Account.getValue(ALICE)
+        console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
 
-    // Check final balance
-    const finalBalance = await api.query.System.Account.getValue(ALICE)
-    console.log(`Final balance of Alice: ${finalBalance.data.free} planck (${Number(finalBalance.data.free) / 1e10} DOT)`)
-    console.log(`Amount deducted: ${Number(initialBalance.data.free - finalBalance.data.free) / 1e10} DOT`)
+        console.log(`Sending ${Number(TRANSFER_AMOUNT) / 1e10} DOT from Asset Hub to Hydration (ParaID 2034)`)
+        
+        // Create and submit XCM transfer
+        const xcmTx = teleportAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
+        console.log("Created XCM transfer transaction")
+        
+        await submitAndWaitForTx(xcmTx, alice)
+        console.log("XCM transfer submitted and included in block")
 
-    client.destroy()
+        // Produce blocks
+        wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }])
+
+        // Wait for processing
+        await new Promise(resolve => setTimeout(resolve, TRANSACTION_WAIT_TIME))
+
+        // Check final balance
+        const finalBalance = await api.query.System.Account.getValue(ALICE)
+        console.log(`Final balance of Alice: ${finalBalance.data.free} planck (${Number(finalBalance.data.free) / 1e10} DOT)`)
+        console.log(`Amount deducted: ${Number(initialBalance.data.free - finalBalance.data.free) / 1e10} DOT`)
+
+    } catch (error) {
+        console.error("Error in main:", error)
+    } finally {
+        // Cleanup
+        client.destroy()
+        wsManager.close()
+    }
 }
 
-async function sendToBob(api: any, transferAmount: bigint) {
-
-    const BOB = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
-    const transfer = api.tx.Balances.transfer_allow_death({
-        dest: MultiAddress.Id(BOB),
-        value: transferAmount,
-    })
-
-    // sign and submit the transaction
-    transfer.signSubmitAndWatch(alice).subscribe({
-        next: (event) => {
-            console.log("Tx event: ", event.type)
-            if (event.type === "txBestBlocksState") {
-                console.log("The tx is now in a best block, check it out:")
-                console.log(`TxHash : ${event.txHash}`)
-            }
-        },
-        error: console.error
-    })
-
-}
-
-main().catch(console.error);
+main().catch(console.error)

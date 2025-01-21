@@ -5,20 +5,20 @@ import { XcmV3Junction } from '@polkadot-api/descriptors';
 import { XcmVersionedLocation } from '@polkadot-api/descriptors';
 import { AccountId, Binary, SS58String } from 'polkadot-api';
 
-export const teleportRelayToPara = (
+export const teleportAssetHubToPara = (
 	api: any,
 	paraId: number,
 	address: SS58String,
 	amount: bigint,
 ) => ({
 	type: "relay_to_para" as const,
-	call: api.tx.XcmPallet.limited_teleport_assets({
+	call: api.tx.PolkadotXcm.limited_reserve_transfer_assets({
 		dest: XcmVersionedLocation.V3({
-			parents: 0,
+			parents: 1,
 			interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(paraId)),
 		}),
 		beneficiary: getBeneficiary(address),
-		assets: getNativeAsset(amount, 0),
+		assets: getNativeAsset(amount, 1),
 		fee_asset_item: 0,
 		weight_limit: XcmV3WeightLimit.Unlimited(),
 	}),
