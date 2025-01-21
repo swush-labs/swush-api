@@ -5,7 +5,7 @@ import { XcmV3Junction } from '@polkadot-api/descriptors';
 import { XcmVersionedLocation } from '@polkadot-api/descriptors';
 import { AccountId, Binary, SS58String } from 'polkadot-api';
 
-const teleportRelayToPara = (
+export const teleportRelayToPara = (
 	api: any,
 	paraId: number,
 	address: SS58String,
