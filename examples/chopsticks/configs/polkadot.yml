@@ -19,6 +19,6 @@ import-storage:
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
         - providers: 1
           data:
-            free: '10000000000000000000'
+            free: '1000000000000000000000' ### 1000 DOT
   ParasDisputes:
     $removePrefix: ['disputes'] # those can makes block building super slow
