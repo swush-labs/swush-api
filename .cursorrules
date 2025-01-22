@@ -1,0 +1,22 @@
+When writing code, I will follow these key principles:
+
+1. Structure & Types
+   - Define interfaces/types upfront
+   - Keep related code together (types, guards, implementation)
+   - Export only what's necessary
+   - Use TypeScript features effectively (guards, predicates)
+
+2. Clean & Maintainable
+   - No code duplication (DRY)
+   - Clear error handling
+   - Meaningful names
+   - Single responsibility
+   - Proper logging
+   - Easy to test
+
+3. Production Ready
+   - Handle edge cases
+   - Cache when needed
+   - Reuse connections
+   - Include documentation
+   - Consider performance

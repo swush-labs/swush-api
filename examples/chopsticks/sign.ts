@@ -86,7 +86,7 @@ async function main() {
     // Define submitTransaction after rpcConnection is initialized
     const submitTransaction = async (tx: any, userId: string) => {
         return new Promise((resolve, reject) => {
-            const subscriptionId = rpcConnection.subscribeTx(userId, tx, {
+            rpcConnection.subscribeTx(userId, tx, {
                 onSuccess: (status) => {
                     console.log(`Transaction finalized: ${status.txHash}`);
                     resolve(status);
