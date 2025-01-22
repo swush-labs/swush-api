@@ -12,6 +12,7 @@ import { connectPapi } from "../../services/network/types"
 import { MultiAddress } from "@polkadot-api/descriptors"
 import WebSocket from 'ws';
 import { transferFromAssetHubToPara } from "./xcmApi"
+import { InvalidTxError, TransactionValidityError } from "polkadot-api"
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 0.1 DOT in planck units
@@ -71,75 +72,87 @@ class WSManager {
     }
 }
 
-// Transaction helper
+// Transaction helper with simplified error handling
 const submitAndWaitForTx = (tx: any, signer: any) => {
     return new Promise((resolve, reject) => {
+        let hasErrored = false;
+
         tx.call.signSubmitAndWatch(signer).subscribe({
             next: (event: any) => {
-                console.log("XCM Tx event: ", event.type)
-                if (event.type === "txBestBlocksState") {
-                    console.log("XCM transfer in block:", event.txHash)
-                    resolve(event)
+                console.log("XCM Tx event:", event.type)
+                
+                if ((event.type === "finalized" || event.type === "txBestBlocksState") && !hasErrored) {
+                    if (!event.ok) {
+                        hasErrored = true;
+                        reject(event.dispatchError); // Pass the raw error up
+                        return;
+                    }
+                    console.log("XCM transfer included in block:", event.txHash);
+                    resolve(event);
                 }
             },
             error: (err: any) => {
-                console.error("XCM transfer failed:", err)
-                reject(err)
+                if (!hasErrored) {
+                    hasErrored = true;
+                    reject(err); // Pass the raw error up
+                }
             }
-        })
-    })
+        });
+    });
 }
 
 async function main() {
-    // Initialize WebSocket manager
     const wsManager = new WSManager()
     const RPC = TEST_RPC_ASSET_HUB
     wsManager.connect(RPC, 'AssetHub')
-    // Uncomment to enable Hydration chain
-    wsManager.connect(TEST_RPC_PARACHAIN_HYDRATION, 'Hydration')
 
-    // Initialize signers
     const { alice, aliceKeyPair, bobKeyPair } = initSigners()
-
-    // Connect to API
     const { api, client } = await connectPapi(RPC)
     
     try {
-        // Setup addresses
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0)
-        const BOB = ss58Encode(bobKeyPair.publicKey, 63) // 7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw
+        const BOB = ss58Encode(bobKeyPair.publicKey, 63)
 
         console.log("Alice address:", ALICE)
         console.log("Bob address:", BOB)
 
-        // Check initial balance
         const initialBalance = await api.query.System.Account.getValue(ALICE)
         console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
 
-        console.log(`Sending ${Number(TRANSFER_AMOUNT) / 1e10} DOT from Asset Hub to Hydration (ParaID 2034)`)
-        
-        // Create and submit XCM transfer
-        const xcmTx = transferFromAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
-        console.log("Created XCM transfer transaction")
-        
+        const xcmTx = transferFromAssetHubToPara(api, 2034111, BOB, TRANSFER_AMOUNT)
+        const estimatedFees = await xcmTx.call.getEstimatedFees(ALICE)
+        console.log(`Estimated fees: ${Number(estimatedFees) / 1e10} DOT`)
+
+        console.log("Submitting XCM transfer transaction...")
         await submitAndWaitForTx(xcmTx, alice)
-        console.log("XCM transfer submitted and included in block")
+            .catch(error => {
+                // Handle XCM specific errors
+                if (error?.type === "Module" && 
+                    (error.value.type === "XcmPallet" || error.value.type === "PolkadotXcm")) {
+                    console.error("XCM Error:", error.value);
+                } 
+                // Handle transaction validity errors
+                else if (error instanceof InvalidTxError) {
+                    console.error("Invalid Transaction:", error.error);
+                }
+                // Handle other errors
+                else {
+                    console.error("Transaction failed:", error);
+                }
+                throw error; // Re-throw to stop execution
+            });
 
-        // Produce blocks
-        wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }])
+        // Only runs if transaction succeeds
+        wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }]);
+        await new Promise(resolve => setTimeout(resolve, TRANSACTION_WAIT_TIME));
 
-        // Wait for processing
-        await new Promise(resolve => setTimeout(resolve, TRANSACTION_WAIT_TIME))
-
-        // Check final balance
         const finalBalance = await api.query.System.Account.getValue(ALICE)
         console.log(`Final balance of Alice: ${finalBalance.data.free} planck (${Number(finalBalance.data.free) / 1e10} DOT)`)
         console.log(`Amount deducted: ${Number(initialBalance.data.free - finalBalance.data.free) / 1e10} DOT`)
 
     } catch (error) {
-        console.error("Error in main:", error)
+       // console.error("Operation failed:", error);
     } finally {
-        // Cleanup
         client.destroy()
         wsManager.close()
     }
