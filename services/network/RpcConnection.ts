@@ -4,6 +4,8 @@ import { createClient, PolkadotClient, TypedApi } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws-provider/node';
 import { withPolkadotSdkCompat } from 'polkadot-api/polkadot-sdk-compat';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
+import { TxSubscriber, TxCallback } from './TxSubscriber';
+import { getPolkadotSigner } from "polkadot-api/signer"
 
 /**
  * Example usage:
@@ -27,6 +29,7 @@ type ApiReturnType = ApiPromise | TypedApi<any> | { api: TypedApi<any>, client: 
 interface IApiWrapper {
   connect(rpcUrl: string): Promise<ApiReturnType>;
   getApi(): ApiPromise | TypedApi<any> | null;
+  getSigner(): any;
 }
 
 class PolkadotApiWrapper implements IApiWrapper {
@@ -51,12 +54,17 @@ class PolkadotApiWrapper implements IApiWrapper {
   getApi(): ApiPromise | null {
     return this.api;
   }
+
+  getSigner(): any {
+    throw new Error('Polkadot API does not support signer');
+  }
 }
 
 class PapiWrapper implements IApiWrapper {
   private client: ReturnType<typeof createClient> | null = null;
   private typedApi: TypedApi<any> | null = null;
   private currentUrl: string | null = null;
+  private signer: any = null;
 
   async connect(rpcUrl: string): Promise<{ api: TypedApi<any>, client: PolkadotClient }> {
     try {
@@ -84,16 +92,26 @@ class PapiWrapper implements IApiWrapper {
   getApi(): TypedApi<any> | null {
     return this.typedApi;
   }
+
+  setSigner(signer: any) {
+    this.signer = signer;
+  }
+
+  getSigner(): any {
+    return this.signer;
+  }
 }
 
 class RpcConnection {
   private static instances: Map<ApiType, RpcConnection> = new Map();
   private apiWrapper: IApiWrapper;
+  private txSubscriber: TxSubscriber;
 
   private constructor(apiType: ApiType) {
     this.apiWrapper = apiType === 'polkadotjs' 
       ? new PolkadotApiWrapper() 
       : new PapiWrapper();
+    this.txSubscriber = new TxSubscriber();
   }
 
   public static getInstance(apiType: ApiType): RpcConnection {
@@ -114,6 +132,43 @@ class RpcConnection {
 
   public getApi(): ApiPromise | TypedApi<any> | null {
     return this.apiWrapper.getApi();
+  }
+
+  public setSigner(signer: any) {
+    if (this.apiWrapper instanceof PapiWrapper) {
+      this.apiWrapper.setSigner(signer);
+    }
+  }
+
+  public subscribeTx(
+    userId: string,
+    tx: any,
+    callbacks: TxCallback
+  ): string {
+    const signer = this.apiWrapper.getSigner();
+    if (!signer) {
+      throw new Error('No signer set for transaction');
+    }
+
+    try {
+      return this.txSubscriber.subscribe(
+        userId,
+        tx.call.signSubmitAndWatch(signer),
+        {
+          ...callbacks,
+          onError: (error) => {
+            // Ensure we're passing the full error object
+            callbacks.onError?.(error?.error || error);
+          }
+        }
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  public unsubscribeTx(subscriptionId: string): void {
+    this.txSubscriber.unsubscribe(subscriptionId);
   }
 }
 

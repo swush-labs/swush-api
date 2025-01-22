@@ -15,8 +15,7 @@ export const transferFromAssetHubToPara = (
 	api: any,
 	paraId: number,
 	address: SS58String,
-	amount: bigint,
-	assetInfo: AssetInfo
+	amount: bigint
 ) => ({
 	type: "asset_hub_to_para" as const,
 	call: api.tx.PolkadotXcm.limited_reserve_transfer_assets({

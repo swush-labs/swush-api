@@ -13,6 +13,7 @@ import { MultiAddress } from "@polkadot-api/descriptors"
 import WebSocket from 'ws';
 import { transferFromAssetHubToPara } from "./xcmApi"
 import { InvalidTxError, TransactionValidityError } from "polkadot-api"
+import RpcConnection from "../../services/network/RpcConnection"
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 0.1 DOT in planck units
@@ -72,41 +73,35 @@ class WSManager {
     }
 }
 
-// Transaction helper with simplified error handling
-const submitAndWaitForTx = (tx: any, signer: any) => {
-    return new Promise((resolve, reject) => {
-        let hasErrored = false;
-
-        tx.call.signSubmitAndWatch(signer).subscribe({
-            next: (event: any) => {
-                console.log("XCM Tx event:", event.type)
-                
-                if ((event.type === "finalized" || event.type === "txBestBlocksState") && !hasErrored) {
-                    if (!event.ok) {
-                        hasErrored = true;
-                        reject(event.dispatchError); // Pass the raw error up
-                        return;
-                    }
-                    console.log("XCM transfer included in block:", event.txHash);
-                    resolve(event);
-                }
-            },
-            error: (err: any) => {
-                if (!hasErrored) {
-                    hasErrored = true;
-                    reject(err); // Pass the raw error up
-                }
-            }
-        });
-    });
-}
-
 async function main() {
     const wsManager = new WSManager()
     const RPC = TEST_RPC_ASSET_HUB
     wsManager.connect(RPC, 'AssetHub')
 
+    // Initialize RPC connection first
+    const rpcConnection = RpcConnection.getInstance('papi');
     const { alice, aliceKeyPair, bobKeyPair } = initSigners()
+    rpcConnection.setSigner(alice);
+
+    // Define submitTransaction after rpcConnection is initialized
+    const submitTransaction = async (tx: any, userId: string) => {
+        return new Promise((resolve, reject) => {
+            const subscriptionId = rpcConnection.subscribeTx(userId, tx, {
+                onSuccess: (status) => {
+                    console.log(`Transaction finalized: ${status.txHash}`);
+                    resolve(status);
+                },
+                onError: (error) => {
+                    console.error('Transaction failed:', error);
+                    reject(error);
+                },
+                onStatusChange: (status) => {
+                    console.log('Transaction status:', status);
+                }
+            });
+        });
+    };
+
     const { api, client } = await connectPapi(RPC)
     
     try {
@@ -119,28 +114,13 @@ async function main() {
         const initialBalance = await api.query.System.Account.getValue(ALICE)
         console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
 
-        const xcmTx = transferFromAssetHubToPara(api, 2034111, BOB, TRANSFER_AMOUNT)
+        const xcmTx = transferFromAssetHubToPara(api, 203423, BOB, TRANSFER_AMOUNT)
         const estimatedFees = await xcmTx.call.getEstimatedFees(ALICE)
         console.log(`Estimated fees: ${Number(estimatedFees) / 1e10} DOT`)
 
         console.log("Submitting XCM transfer transaction...")
-        await submitAndWaitForTx(xcmTx, alice)
-            .catch(error => {
-                // Handle XCM specific errors
-                if (error?.type === "Module" && 
-                    (error.value.type === "XcmPallet" || error.value.type === "PolkadotXcm")) {
-                    console.error("XCM Error:", error.value);
-                } 
-                // Handle transaction validity errors
-                else if (error instanceof InvalidTxError) {
-                    console.error("Invalid Transaction:", error.error);
-                }
-                // Handle other errors
-                else {
-                    console.error("Transaction failed:", error);
-                }
-                throw error; // Re-throw to stop execution
-            });
+        const userId = `user-${ALICE}`;
+        await submitTransaction(xcmTx, userId);
 
         // Only runs if transaction succeeds
         wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }]);
@@ -151,7 +131,7 @@ async function main() {
         console.log(`Amount deducted: ${Number(initialBalance.data.free - finalBalance.data.free) / 1e10} DOT`)
 
     } catch (error) {
-       // console.error("Operation failed:", error);
+        console.error('Transaction error:', error);
     } finally {
         client.destroy()
         wsManager.close()
