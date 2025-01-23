@@ -15,7 +15,8 @@ export const transferFromAssetHubToPara = (
 	api: any,
 	paraId: number,
 	address: SS58String,
-	amount: bigint
+	amount: bigint,
+	fee_asset_item: number = 0
 ) => ({
 	type: "asset_hub_to_para" as const,
 	call: api.tx.PolkadotXcm.limited_reserve_transfer_assets({
@@ -25,7 +26,7 @@ export const transferFromAssetHubToPara = (
 		}),
 		beneficiary: getBeneficiary(address),
 		assets: getNativeAsset(amount, 1), // DOT is from relay chain (parent: 1)
-		fee_asset_item: 0,
+		fee_asset_item: fee_asset_item,
 		weight_limit: XcmV3WeightLimit.Unlimited(),
 	}),
 });

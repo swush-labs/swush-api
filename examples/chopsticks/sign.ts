@@ -114,7 +114,7 @@ async function main() {
         const initialBalance = await api.query.System.Account.getValue(ALICE)
         console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
 
-        const xcmTx = transferFromAssetHubToPara(api, 203423, BOB, TRANSFER_AMOUNT)
+        const xcmTx = transferFromAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
         const estimatedFees = await xcmTx.call.getEstimatedFees(ALICE)
         console.log(`Estimated fees: ${Number(estimatedFees) / 1e10} DOT`)
 
