@@ -7,15 +7,10 @@ import {
   ss58Encode
 } from "@polkadot-labs/hdkd-helpers"
 import { getPolkadotSigner } from "polkadot-api/signer"
-import { RPC_URL, TEST_RPC, TEST_RPC_ASSET_HUB, TEST_RPC_PARACHAIN_HYDRATION } from "../../services/constants"
+import { TEST_RPC_ASSET_HUB } from "../../services/constants"
 import { connectPapi } from "../../services/network/types"
-import { MultiAddress } from "@polkadot-api/descriptors"
 import WebSocket from 'ws';
 import { transferFromAssetHubToPara } from "./xcmApi"
-import { InvalidTxError, TransactionValidityError } from "polkadot-api"
-import RpcConnection from "../../services/network/RpcConnection"
-import { Observable } from 'rxjs';
-import { TxEvent } from 'polkadot-api';
 import { TransactionService } from '../../services/network/TransactionService';
 
 // Constants

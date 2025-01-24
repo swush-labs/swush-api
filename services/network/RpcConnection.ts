@@ -4,8 +4,6 @@ import { createClient, PolkadotClient, TypedApi } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws-provider/node';
 import { withPolkadotSdkCompat } from 'polkadot-api/polkadot-sdk-compat';
 import { polkadot_asset_hub, polkadot, hydration } from '@polkadot-api/descriptors';
-import { TxSubscriber, TxCallback } from './TxSubscriber';
-import { getPolkadotSigner } from "polkadot-api/signer"
 
 /**
  * Example usage:
@@ -116,13 +114,11 @@ class PapiWrapper implements IApiWrapper {
 class RpcConnection {
   private static instances: Map<ApiType, RpcConnection> = new Map();
   private apiWrapper: IApiWrapper;
-  private txSubscriber: TxSubscriber;
 
   private constructor(apiType: ApiType) {
     this.apiWrapper = apiType === 'polkadotjs' 
       ? new PolkadotApiWrapper() 
       : new PapiWrapper();
-    this.txSubscriber = new TxSubscriber();
   }
 
   public static getInstance(apiType: ApiType): RpcConnection {

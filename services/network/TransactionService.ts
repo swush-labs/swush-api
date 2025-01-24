@@ -1,5 +1,4 @@
 import { TxEvent, InvalidTxError, TransactionValidityError } from 'polkadot-api';
-import { Observable } from 'rxjs';
 
 export interface TransactionStatus {
     type: string;
