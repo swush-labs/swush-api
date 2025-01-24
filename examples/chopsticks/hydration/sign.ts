@@ -14,7 +14,7 @@ import { connectPapi } from "../../../services/network/types";
 import { transferParaToAssetHub } from "../xcmApi";
 
 // Constants
-const TRANSFER_AMOUNT = 100_000_000_000_000n // 0.1 HDX in planck units
+const TRANSFER_AMOUNT = 1_000_000_000n // 1 HDX (considering fees)
 const HDX_ASSET_ID = 0 // HDX token ID in Hydration
 const BLOCK_PRODUCTION_COUNT = 2
 const TRANSACTION_WAIT_TIME = 5000 // 5 seconds
@@ -81,18 +81,34 @@ async function main() {
     const { api, client } = await connectPapi(RPC, 'hydration')
 
     try {
-        const ALICE = ss58Encode(aliceKeyPair.publicKey, 63) // Hydration address format
-        const BOB = ss58Encode(bobKeyPair.publicKey, 0)      // Asset Hub address format
+        const ALICE = ss58Encode(aliceKeyPair.publicKey, 63)
+        const BOB = ss58Encode(bobKeyPair.publicKey, 0)
 
         console.log("Alice address (Hydration):", ALICE)
         console.log("Bob address (Asset Hub):", BOB)
 
-        // Debug the available pallets
-        console.log('Available pallets:', Object.keys(api.query))
-
-        // Check HDX token balance using tokens (lowercase)
+        // Check HDX token balance with more detailed logging
         const initialBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
-        console.log(`Initial HDX balance of Alice: ${initialBalance.free} planck (${Number(initialBalance.free) / 1e12} HDX)`)
+        const hdxBalance = Number(initialBalance.free) / 1e12
+        
+        console.log('Transfer details:')
+        console.log(`- Amount to transfer: ${Number(TRANSFER_AMOUNT) / 1e12} HDX (${TRANSFER_AMOUNT} planck)`)
+        console.log(`- Available balance: ${hdxBalance} HDX (${initialBalance.free} planck)`)
+        // console.log(`- Reserved balance: ${Number(initialBalance.reserved) / 1e12} HDX`)
+        // console.log(`- Frozen balance: ${Number(initialBalance.frozen) / 1e12} HDX`)
+
+        // Query existential deposit if available
+        try {
+            const existentialDeposit = 1000000000000
+            console.log(`Existential deposit: ${Number(existentialDeposit) / 1e12} HDX`)
+        } catch (e) {
+            console.log('No existential deposit found')
+        }
+
+        // Check if we have enough balance
+        if (initialBalance.free < TRANSFER_AMOUNT) {
+            throw new Error(`Insufficient balance. Have ${hdxBalance} HDX, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e12} HDX`)
+        }
 
         // Create XCM transfer from Hydration to Asset Hub
         const xcmTx = transferParaToAssetHub(api, 1000, BOB, TRANSFER_AMOUNT)

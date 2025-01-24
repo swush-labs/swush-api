@@ -10,6 +10,18 @@ type AssetInfo = {
 	assetLocation : XcmV4Location
 }
 
+//create asset location for foreign asset from parachain, palletInstance, assetId
+export function getXcmV3Multilocation(parents: number, parachain: number, palletInstance: number, assetId: bigint | number): XcmV4Location {
+    return {
+        parents: parents,
+        interior: XcmV3Junctions.X3([
+			XcmV3Junction.Parachain(parachain),
+			XcmV3Junction.PalletInstance(palletInstance),
+			XcmV3Junction.GeneralIndex(BigInt(assetId))
+        ]),
+    };
+}
+
 // Asset Hub (1000) to other parachain
 export const transferFromAssetHubToPara = (
 	api: any,
@@ -44,7 +56,7 @@ export const transferParaToAssetHub = (
 			interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(paraId)), // Asset Hub paraID
 		}),
 		beneficiary: getBeneficiary(address),
-		assets: getNativeAsset(amount, 0), // DOT is from relay chain (parent: 1)
+		assets: getNativeAsset(amount, 0), // DOT is from relay chain (parent: 1) or HDX is from parachain (parent: 0)
 		fee_asset_item: 0,
 		weight_limit: XcmV3WeightLimit.Unlimited(),
 	}),
@@ -65,7 +77,7 @@ const getNativeAsset = (amount: bigint, parents: 1 | 0) =>
 	XcmVersionedAssets.V3([
 		{
 			id: XcmV3MultiassetAssetId.Concrete({
-				parents, // 1 for relay chain DOT, 0 for local asset
+				parents: parents, // 1 for relay chain DOT, 0 for local asset
 				interior: XcmV3Junctions.Here(),
 			}),
 			fun: XcmV3MultiassetFungibility.Fungible(amount),
