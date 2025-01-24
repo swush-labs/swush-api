@@ -33,6 +33,7 @@ export const transferFromAssetHubToPara = (
 // From parachain to Asset Hub (1000)
 export const transferParaToAssetHub = (
 	api: any,
+	paraId: number,
 	address: SS58String,
 	amount: bigint,
 ) => ({
@@ -40,10 +41,10 @@ export const transferParaToAssetHub = (
 	call: api.tx.PolkadotXcm.limited_reserve_transfer_assets({
 		dest: XcmVersionedLocation.V3({
 			parents: 1, // Up to relay chain
-			interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(1000)), // Asset Hub paraID
+			interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(paraId)), // Asset Hub paraID
 		}),
 		beneficiary: getBeneficiary(address),
-		assets: getNativeAsset(amount, 1), // DOT is from relay chain (parent: 1)
+		assets: getNativeAsset(amount, 0), // DOT is from relay chain (parent: 1)
 		fee_asset_item: 0,
 		weight_limit: XcmV3WeightLimit.Unlimited(),
 	}),

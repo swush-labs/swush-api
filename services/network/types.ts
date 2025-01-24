@@ -44,8 +44,14 @@ export function createHydrationConnection(connection: { api: TypedApi<any>; clie
     };
 }
 
-// Chain-specific connect functions
-export async function connectPapi(rpcUrl: string, chainType: 'asset-hub' | 'polkadot' | 'hydration'): Promise<PapiConnection<SupportedChains>> {
+// Chain-specific connect functions with proper return types
+export async function connectPapi(rpcUrl: string, chainType: 'asset-hub'): Promise<PapiConnection<typeof polkadot_asset_hub>>;
+export async function connectPapi(rpcUrl: string, chainType: 'polkadot'): Promise<PapiConnection<typeof polkadot>>;
+export async function connectPapi(rpcUrl: string, chainType: 'hydration'): Promise<PapiConnection<typeof hydration>>;
+export async function connectPapi(
+    rpcUrl: string, 
+    chainType: 'asset-hub' | 'polkadot' | 'hydration'
+): Promise<PapiConnection<SupportedChains>> {
     const papiConn = RpcConnection.getInstance('papi');
     const result = await papiConn.connect(rpcUrl, chainType);
     
