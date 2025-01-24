@@ -9,6 +9,10 @@
     "polkadot_asset_hub": {
       "chain": "polkadot_asset_hub",
       "metadata": ".papi\\metadata\\polkadot_asset_hub.scale"
+    },
+    "hydration": {
+      "wsUrl": "wss://hydration.dotters.network",
+      "metadata": ".papi\\metadata\\hydration.scale"
     }
   }
 }
