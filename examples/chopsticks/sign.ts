@@ -14,6 +14,9 @@ import WebSocket from 'ws';
 import { transferFromAssetHubToPara } from "./xcmApi"
 import { InvalidTxError, TransactionValidityError } from "polkadot-api"
 import RpcConnection from "../../services/network/RpcConnection"
+import { Observable } from 'rxjs';
+import { TxEvent } from 'polkadot-api';
+import { TransactionService } from '../../services/network/TransactionService';
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 0.1 DOT in planck units
@@ -78,32 +81,9 @@ async function main() {
     const RPC = TEST_RPC_ASSET_HUB
     wsManager.connect(RPC, 'AssetHub')
 
-    // Initialize RPC connection first
-    const rpcConnection = RpcConnection.getInstance('papi');
     const { alice, aliceKeyPair, bobKeyPair } = initSigners()
-    rpcConnection.setSigner(alice);
+    const { api, client } = await connectPapi(RPC, 'asset-hub')
 
-    // Define submitTransaction after rpcConnection is initialized
-    const submitTransaction = async (tx: any, userId: string) => {
-        return new Promise((resolve, reject) => {
-            const subscriptionId = rpcConnection.subscribeTx(userId, tx, {
-                onSuccess: (status) => {
-                    console.log(`Transaction finalized: ${status.txHash}`);
-                    resolve(status);
-                },
-                onError: (error) => {
-                    console.error('Transaction failed:', error);
-                    reject(error);
-                },
-                onStatusChange: (status) => {
-                    console.log('Transaction status:', status);
-                }
-            });
-        });
-    };
-
-    const { api, client } = await connectPapi(RPC)
-    
     try {
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0)
         const BOB = ss58Encode(bobKeyPair.publicKey, 63)
@@ -114,13 +94,20 @@ async function main() {
         const initialBalance = await api.query.System.Account.getValue(ALICE)
         console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
 
-        const xcmTx = transferFromAssetHubToPara(api, 203423, BOB, TRANSFER_AMOUNT)
-        const estimatedFees = await xcmTx.call.getEstimatedFees(ALICE)
-        console.log(`Estimated fees: ${Number(estimatedFees) / 1e10} DOT`)
+        const xcmTx = transferFromAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
 
         console.log("Submitting XCM transfer transaction...")
-        const userId = `user-${ALICE}`;
-        await submitTransaction(xcmTx, userId);
+        await TransactionService.submitAndWatch(xcmTx.call, alice, {
+            onSuccess: (status) => {
+                console.log(`Transaction successful in block ${status.blockNumber}`);
+            },
+            onError: (error) => {
+                console.error('Transaction failed:', error);
+            },
+            onStatusChange: (status) => {
+                console.log('Transaction status:', status);
+            }
+        });
 
         // Only runs if transaction succeeds
         wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }]);
