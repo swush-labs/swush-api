@@ -261,11 +261,24 @@ async function fetchPoolsPapi(
         poolPairsInfo.push(tokenPair);
     }
 
+    fs.writeFileSync(
+        'output/uniqueAssets.json',
+        JSON.stringify(
+            Object.fromEntries(uniqueAssets),
+            (_, value) => {
+                if (typeof value === 'bigint') {
+                    return value.toString();
+                }
+                return value;
+            },
+            2
+        )
+    );
     // Enrich with HydraDX data
     const enrichedAssets = await enrichWithHydraDxData(uniqueAssets);
 
     fs.writeFileSync(
-        'examples/output/enrichedAssets.json',
+        'output/enrichedAssets.json',
         JSON.stringify(
             Object.fromEntries(enrichedAssets),
             (_, value) => {
@@ -305,27 +318,27 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
             if (!location?.interior?.x3) return false;
             const interior = location.interior.x3;
             return interior.some(j => j.palletInstance === 50) && 
-                   interior.some(j => j.generalIndex === assetId) &&
+                  interior.some(j => j.generalIndex === Number(assetId)) &&
                    interior.some(j => j.parachain === 1000);
         };
 
-        // Helper function to check foreign asset match
-        const isForeignAssetMatch = (poolLocation: any, assetLocation: XcmV4Location) => {
-            try {
-                const normalizedPoolLocation = {
-                    parents: poolLocation.parents,
-                    interior: poolLocation.interior
-                };
-                const normalizedAssetLocation = {
-                    parents: assetLocation.parents,
-                    interior: assetLocation.interior
-                };
-                return serializeKey(normalizedPoolLocation) === serializeKey(normalizedAssetLocation);
-            } catch (error) {
-                console.error('Error matching foreign asset:', error);
-                return false;
-            }
-        };
+        // // Helper function to check foreign asset match
+        // const isForeignAssetMatch = (poolLocation: any, assetLocation: XcmV4Location) => {
+        //     try {
+        //         const normalizedPoolLocation = {
+        //             parents: poolLocation.parents,
+        //             interior: poolLocation.interior
+        //         };
+        //         const normalizedAssetLocation = {
+        //             parents: assetLocation.parents,
+        //             interior: assetLocation.interior
+        //         };
+        //         return serializeKey(normalizedPoolLocation) === serializeKey(normalizedAssetLocation);
+        //     } catch (error) {
+        //         console.error('Error matching foreign asset:', error);
+        //         return false;
+        //     }
+        // };
 
         for (const [assetId, assetInfo] of uniqueAssets.entries()) {
             const asset = { ...assetInfo };
@@ -335,9 +348,9 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
                 const matchedToken = pool.tokens.find(token => {
                     if (asset.type === AssetType.Native) {
                         return isNativeAssetMatch(token.location, assetId);
-                    } else {
+                    } /* else {
                         return isForeignAssetMatch(token.location, asset.xcmLocation);
-                    }
+                    } */
                 });
 
                 if (matchedToken) {

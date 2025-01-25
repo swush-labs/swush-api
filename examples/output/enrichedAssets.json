@@ -36,32 +36,6 @@
           }
         ]
       }
-    },
-    "hydradx": {
-      "assetId": "18",
-      "location": {
-        "parents": 1,
-        "interior": {
-          "x3": [
-            {
-              "parachain": 2004
-            },
-            {
-              "palletInstance": 110
-            },
-            {
-              "accountKey20": {
-                "network": null,
-                "key": "0x06e605775296e851ff43b4daa541bb0984e9d6fd"
-              }
-            }
-          ]
-        }
-      },
-      "poolAddress": "7JP6TvcH5x31TsbC6qVJHEhsW7UNmpREMZuLBpK2bG1goJRS",
-      "poolType": "Stableswap",
-      "balance": "377815023898269387751944",
-      "existentialDeposit": "10000000000000000"
     }
   },
   "23": {
@@ -101,32 +75,6 @@
           }
         ]
       }
-    },
-    "hydradx": {
-      "assetId": "23",
-      "location": {
-        "parents": 1,
-        "interior": {
-          "x3": [
-            {
-              "parachain": 2004
-            },
-            {
-              "palletInstance": 110
-            },
-            {
-              "accountKey20": {
-                "network": null,
-                "key": "0xc30e9ca94cf52f3bf5692aacf81353a27052c46f"
-              }
-            }
-          ]
-        }
-      },
-      "poolAddress": "7JP6TvcH5x31TsbC6qVJHEhsW7UNmpREMZuLBpK2bG1goJRS",
-      "poolType": "Stableswap",
-      "balance": "333187789092",
-      "existentialDeposit": "10000"
     }
   },
   "30": {
@@ -166,21 +114,6 @@
           }
         ]
       }
-    },
-    "hydradx": {
-      "assetId": "30",
-      "location": {
-        "parents": 1,
-        "interior": {
-          "x1": {
-            "parachain": 3369
-          }
-        }
-      },
-      "poolAddress": "7MveTu8GZxFc5953NYU85MGx6xti1KtaCiPyM6C9p9Ka2gnD",
-      "poolType": "Xyk",
-      "balance": "2381394915836357140044214",
-      "existentialDeposit": "21367521367521400"
     }
   },
   "111": {
@@ -349,8 +282,8 @@
       "deposit": "100000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 1950,
-      "sufficients": 1934,
+      "accounts": 1952,
+      "sufficients": 1936,
       "approvals": 2
     },
     "metadata": {
@@ -376,6 +309,29 @@
           }
         ]
       }
+    },
+    "hydradx": {
+      "assetId": "22",
+      "location": {
+        "parents": 1,
+        "interior": {
+          "x3": [
+            {
+              "parachain": 1000
+            },
+            {
+              "palletInstance": 50
+            },
+            {
+              "generalIndex": 1337
+            }
+          ]
+        }
+      },
+      "poolAddress": "7LVGEVLFXpsCCtnsvhzkSMQARU7gRVCtwMckG7u7d3V6FVvG",
+      "poolType": "Stableswap",
+      "balance": "8312607596683",
+      "existentialDeposit": "10000"
     }
   },
   "1984": {
@@ -388,8 +344,8 @@
       "deposit": "1000000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 9660,
-      "sufficients": 9551,
+      "accounts": 9667,
+      "sufficients": 9558,
       "approvals": 14
     },
     "metadata": {
@@ -415,6 +371,29 @@
           }
         ]
       }
+    },
+    "hydradx": {
+      "assetId": "10",
+      "location": {
+        "parents": 1,
+        "interior": {
+          "x3": [
+            {
+              "parachain": 1000
+            },
+            {
+              "palletInstance": 50
+            },
+            {
+              "generalIndex": 1984
+            }
+          ]
+        }
+      },
+      "poolAddress": "7P7gK6QgTCc5zew9RiFUnDHyFrzUshWBVhoaiSA2rqyY4LJp",
+      "poolType": "Xyk",
+      "balance": "2527152351",
+      "existentialDeposit": "10000"
     }
   },
   "3164": {
@@ -898,11 +877,11 @@
       "issuer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "admin": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "freezer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
-      "supply": "13626778566340761075929487",
+      "supply": "13626582238660761075929422",
       "deposit": "2019000000",
       "min_balance": "10000000000000000",
       "is_sufficient": false,
-      "accounts": 473299,
+      "accounts": 473297,
       "sufficients": 0,
       "approvals": 3
     },
