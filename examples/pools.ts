@@ -298,7 +298,6 @@ async function fetchPoolsPapi(
  * Enriches the unique assets with HydraDX pool information
  */
 async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
-    // Connect to HydraDX
     const wsProvider = new WsProvider('wss://rpc.hydradx.cloud');
     const hydraApi = await ApiPromise.create({ provider: wsProvider });
 
@@ -308,7 +307,6 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
         const tradeRouter = new TradeRouter(poolService);
         const hydradxPools = await tradeRouter.getPools();
 
-        // Debug logs to understand our data
         console.log('First HydraDX Pool:', JSON.stringify(hydradxPools[0], null, 2));
 
         const enrichedAssets = new Map<string, Asset>();
@@ -318,7 +316,7 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
             if (!location?.interior?.x3) return false;
             const interior = location.interior.x3;
             return interior.some(j => j.palletInstance === 50) && 
-                  interior.some(j => j.generalIndex === Number(assetId)) &&
+                   interior.some(j => j.generalIndex === Number(assetId)) &&
                    interior.some(j => j.parachain === 1000);
         };
 
@@ -343,28 +341,36 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
         for (const [assetId, assetInfo] of uniqueAssets.entries()) {
             const asset = { ...assetInfo };
             
-            // Find pool and matching token in one pass
-            for (const pool of hydradxPools) {
-                const matchedToken = pool.tokens.find(token => {
-                    if (asset.type === AssetType.Native) {
-                        return isNativeAssetMatch(token.location, assetId);
-                    } /* else {
-                        return isForeignAssetMatch(token.location, asset.xcmLocation);
-                    } */
-                });
+            // Store all pools where this asset appears
+            const matchingPools: Array<{
+                pool: PoolBase;
+                token: any;
+            }> = [];
 
-                if (matchedToken) {
-                    asset.hydradx = {
-                        assetId: matchedToken.id,
-                        location: matchedToken.location,
-                        poolAddress: pool.address,
-                        poolType: pool.type,
-                        balance: matchedToken.balance,
-                        existentialDeposit: matchedToken.existentialDeposit
-                    };
-                    console.log('Matched asset:', assetId, 'with HydraDX asset:', matchedToken.id);
-                    break; // Exit pool loop once we find a match
+            // Check all pools for matches
+            for (const pool of hydradxPools) {
+                // Check both tokens in the pool
+                for (const token of pool.tokens) {
+                    if (asset.type === AssetType.Native && isNativeAssetMatch(token.location, assetId)) {
+                        matchingPools.push({ pool, token });
+                    }
                 }
+            }
+
+            // If we found any matches, use the first one
+            // You could also implement logic to choose the best pool based on some criteria
+            if (matchingPools.length > 0) {
+                const { pool, token } = matchingPools[0];
+                asset.hydradx = {
+                    assetId: token.id,
+                    location: token.location,
+                    poolAddress: pool.address,
+                    poolType: pool.type,
+                    balance: token.balance,
+                    existentialDeposit: token.existentialDeposit
+                };
+                console.log('Matched asset:', assetId, 'with HydraDX asset:', token.id);
+                console.log('Found in', matchingPools.length, 'pools');
             }
 
             enrichedAssets.set(assetId, asset);
@@ -372,7 +378,6 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
 
         return enrichedAssets;
     } finally {
-        // Ensure we always disconnect
         await hydraApi.disconnect();
     }
 }

@@ -282,8 +282,8 @@
       "deposit": "100000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 1952,
-      "sufficients": 1936,
+      "accounts": 1953,
+      "sufficients": 1937,
       "approvals": 2
     },
     "metadata": {
@@ -321,8 +321,8 @@
       "deposit": "1000000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 9667,
-      "sufficients": 9558,
+      "accounts": 9676,
+      "sufficients": 9567,
       "approvals": 14
     },
     "metadata": {
@@ -831,11 +831,11 @@
       "issuer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "admin": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
       "freezer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
-      "supply": "13626582238660761075929422",
+      "supply": "13626345983300761075929292",
       "deposit": "2019000000",
       "min_balance": "10000000000000000",
       "is_sufficient": false,
-      "accounts": 473297,
+      "accounts": 473295,
       "sufficients": 0,
       "approvals": 3
     },
@@ -864,12 +864,12 @@
       "issuer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
       "admin": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
       "freezer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
-      "supply": "16073481869248",
+      "supply": "10074161317785",
       "deposit": "0",
       "min_balance": "1000000000",
       "is_sufficient": true,
-      "accounts": 27,
-      "sufficients": 27,
+      "accounts": 26,
+      "sufficients": 26,
       "approvals": 0
     },
     "metadata": {
