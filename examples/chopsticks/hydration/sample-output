@@ -1,0 +1,78 @@
+[
+  {
+    "address": "7HkYL6b2p4tuppGaKpugS2WaAjngiCXDXDKrEeyYgTaFP8KA",
+    "type": "Xyk",
+    "tokens": [
+      {
+        "id": "0",
+        "balance": "152201592120538",
+        "name": "Hydration",
+        "symbol": "HDX",
+        "decimals": 12,
+        "icon": "HDX",
+        "type": "Token",
+        "isSufficient": true,
+        "existentialDeposit": "1000000000000"
+      },
+      {
+        "id": "5",
+        "balance": "2379939084",
+        "name": "Polkadot",
+        "symbol": "DOT",
+        "decimals": 10,
+        "icon": "DOT",
+        "type": "Token",
+        "isSufficient": true,
+        "location": {
+          "parents": 1,
+          "interior": {
+            "here": null
+          }
+        },
+        "existentialDeposit": "17540000"
+      }
+    ],
+    "maxInRatio": 3,
+    "maxOutRatio": 3,
+    "minTradingLimit": 1000
+  },
+  {
+    "address": "7NPWe2Y1TVYh6jiVzmpzGVMnKctcaduyjfSMEu3vRXceAiFx",
+    "type": "Xyk",
+    "tokens": [
+      {
+        "id": "0",
+        "balance": "1028962438476",
+        "name": "Hydration",
+        "symbol": "HDX",
+        "decimals": 12,
+        "icon": "HDX",
+        "type": "Token",
+        "isSufficient": true,
+        "existentialDeposit": "1000000000000"
+      },
+      {
+        "id": "27",
+        "balance": "15972563874",
+        "name": "Crust",
+        "symbol": "CRU",
+        "decimals": 12,
+        "icon": "CRU",
+        "type": "Token",
+        "isSufficient": true,
+        "location": {
+          "parents": 1,
+          "interior": {
+            "x1": {
+              "parachain": 2008
+            }
+          }
+        },
+        "existentialDeposit": "7874015748"
+      }
+    ],
+    "maxInRatio": 3,
+    "maxOutRatio": 3,
+    "minTradingLimit": 1000
+  }
+]

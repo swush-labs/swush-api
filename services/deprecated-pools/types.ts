@@ -8,6 +8,14 @@ import { RequireOnlyOne } from "@substrate/asset-transfer-api/lib/src/types";
 export interface Asset {
   asset: AssetInfo;
   metadata: AssetMetadata;
+  hydradx?: {
+    assetId: string;
+    location: XcmV4Location;
+    poolAddress: string;
+    poolType: string;
+    balance: string;
+    existentialDeposit: string;
+  };
 }
 
 export interface AssetInfo {

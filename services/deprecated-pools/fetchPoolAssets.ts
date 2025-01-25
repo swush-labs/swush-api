@@ -2,6 +2,7 @@ import CacheManager from '../cache/CacheManager';
 import { AssetInfo, AssetMetadata, TokenPair, Asset, XcmV4Location } from './types';
 import { ApiPromise } from '@polkadot/api';
 import fs from 'fs';
+import { TradeRouter, PoolService, PoolBase, PoolType, Asset as HydradxAsset } from '@galacticcouncil/sdk';
 
 
 // Utility function to serialize complex keys
@@ -88,8 +89,15 @@ export async function fetchAllAssets(api: ApiPromise) {
   cache.set('foreignAssets', foreignAssetsMap);
 
   console.log('All assets and metadata fetched and cached');
-  await fetchSystemParachainAssetConversionPoolInfo(nativeAssetsMap, foreignAssetsMap, api);
-  return nativeAssetsMap;
+  const uniqueAssets = await fetchSystemParachainAssetConversionPoolInfo(nativeAssetsMap, foreignAssetsMap, api);
+  
+  if (uniqueAssets) {
+    // Enrich with HydraDX data after getting unique assets
+    const enrichedAssets = await enrichWithHydraDxData(api, uniqueAssets);
+    return enrichedAssets;
+  }
+  
+  return new Map<string, Asset>(); // Return empty map if no assets found
 }
 
 
@@ -155,6 +163,77 @@ async function fetchSystemParachainAssetConversionPoolInfo(
       JSON.stringify(Object.fromEntries(uniqueAssets), null, 2)
     );
 
-    return poolPairsInfo;
+    return uniqueAssets; // Return uniqueAssets instead of poolPairsInfo
   }
+  return null;
+}
+
+/**
+ * Enriches the unique assets with HydraDX pool information
+ */
+export async function enrichWithHydraDxData(
+  api: ApiPromise, 
+  uniqueAssets: Map<string, Asset>
+) {
+  const poolService = new PoolService(api);
+  await poolService.syncRegistry();
+  const tradeRouter = new TradeRouter(poolService);
+  const hydradxPools = await tradeRouter.getPools();
+
+  const enrichedAssets = new Map<string, Asset>();
+
+  for (const [assetId, assetInfo] of uniqueAssets.entries()) {
+    const asset = { ...assetInfo };
+    
+    // Try to find matching HydraDX pool
+    const matchingPool = hydradxPools.find((pool: PoolBase) => {
+      return pool.tokens.some(poolAsset => {
+        if (asset.asset.isSufficient) {
+          // For native assets (from pallet 50)
+          return poolAsset.location?.interior?.X2?.[0]?.PalletInstance === '50' &&
+                 poolAsset.location?.interior?.X2?.[1]?.GeneralIndex === assetId;
+        } else {
+          // For foreign assets
+          const assetLocation = JSON.parse(assetId); // Since foreign asset IDs are serialized XCM locations
+          return poolAsset.location?.parents === assetLocation.parents &&
+                 JSON.stringify(poolAsset.location?.interior) === JSON.stringify(assetLocation.interior);
+        }
+      });
+    });
+
+    if (matchingPool) {
+      const matchedAsset = matchingPool.tokens.find(a => {
+        // Same matching logic as above
+        if (asset.asset.isSufficient) {
+          return a.location?.interior?.X2?.[0]?.PalletInstance === '50' &&
+                 a.location?.interior?.X2?.[1]?.GeneralIndex === assetId;
+        } else {
+          const assetLocation = JSON.parse(assetId);
+          return a.location?.parents === assetLocation.parents &&
+                 JSON.stringify(a.location?.interior) === JSON.stringify(assetLocation.interior);
+        }
+      });
+
+      if (matchedAsset) {
+        asset.hydradx = {
+          assetId: matchedAsset.id,
+          location: matchedAsset.location,
+          poolAddress: matchingPool.address,
+          poolType: matchingPool.type,
+          balance: matchedAsset.balance,
+          existentialDeposit: matchedAsset.existentialDeposit
+        };
+      }
+    }
+
+    enrichedAssets.set(assetId, asset);
+  }
+
+  // Write enriched assets to file
+  fs.writeFileSync(
+    'examples/output/enrichedAssets.json',
+    JSON.stringify(Object.fromEntries(enrichedAssets), null, 2)
+  );
+
+  return enrichedAssets;
 }
