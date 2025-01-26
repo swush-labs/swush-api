@@ -12,7 +12,6 @@ import {
     NETWORKS_SUPPORTED,
 } from '../constants';
 import CacheManager from '../cache/CacheManager';
-import { UnionXcmMultiLocation } from '@substrate/asset-transfer-api/lib/src/createXcmTypes/types';
 
 
 // Add type for the lookup cache
