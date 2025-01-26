@@ -133,7 +133,7 @@ class RpcConnection {
     this.instances.clear();
   }
 
-  public async connect(rpcUrl: string, chainType: 'asset-hub' | 'polkadot' | 'hydration'): Promise<ApiReturnType> {
+  public async connect(rpcUrl: string, chainType?: 'asset-hub' | 'polkadot' | 'hydration'): Promise<ApiReturnType> {
     return this.apiWrapper.connect(rpcUrl, chainType);
   }
 
