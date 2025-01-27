@@ -1,11 +1,12 @@
-import { RPC_URL } from "../services/constants";
+import { RPC_URL } from "../../services/constants";
 import { SS58String, TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub, XcmV3Junction, XcmV3Junctions } from '@polkadot-api/descriptors';
 import fs from 'fs';
-import CacheManager from '../services/cache/CacheManager';
-import { connectPapi } from "../services/network/types";
+import CacheManager from '../../services/cache/CacheManager';
+import { connectPapi } from "../../services/network/types";
 import { TradeRouter, PoolService, PoolBase } from '@galacticcouncil/sdk';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { base, degen } from "./external";
 
 //enum for asset type
 enum AssetType {
@@ -303,7 +304,9 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
 
     try {
         const poolService = new PoolService(hydraApi);
-        await poolService.syncRegistry();
+        const externalAssets = [...base, ...degen];
+        console.log("Syncing registry with", externalAssets.length, "assets");
+        await poolService.syncRegistry(externalAssets);
         const tradeRouter = new TradeRouter(poolService);
         const hydradxPools = await tradeRouter.getPools();
 

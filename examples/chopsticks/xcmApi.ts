@@ -3,7 +3,7 @@ import { XcmV3Junctions } from '@polkadot-api/descriptors';
 import { XcmV3Junction } from '@polkadot-api/descriptors';
 import { XcmVersionedLocation } from '@polkadot-api/descriptors';
 import { AccountId, Binary, SS58String } from 'polkadot-api';
-import { XcmV4Location } from '../pools';
+import { XcmV4Location } from '../assets/pools';
 
 type AssetInfo = {
 	assetType: 'relay' | 'native' | 'foreign'
