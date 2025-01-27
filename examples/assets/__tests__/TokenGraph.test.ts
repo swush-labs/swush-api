@@ -1,4 +1,4 @@
-import { TokenGraph } from './TokenGraph';
+import { TokenGraph } from '../TokenGraph';
 import { XcmV3Junction, XcmV3Junctions } from '@polkadot-api/descriptors';
 
 describe('TokenGraph', () => {

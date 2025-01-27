@@ -1,4 +1,6 @@
+import { TypedApi } from 'polkadot-api';
 import { XcmV4Location } from './pools';
+import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 
 export interface Node {
     asset: XcmV4Location;
@@ -60,10 +62,11 @@ export class TokenGraph {
             throw new Error(`One or both tokens not found: ${fromSymbol}, ${toSymbol}`);
         }
 
+        // Create the forward edge
         const edge: Edge = { from: fromSymbol, to: toSymbol, poolId, liquidity, fee, dex, poolType };
         this.adjacencyList.get(fromSymbol)?.push(edge);
         
-        // Add reverse edge with same properties
+        // Create the reverse edge
         const reverseEdge: Edge = { ...edge, from: toSymbol, to: fromSymbol };
         this.adjacencyList.get(toSymbol)?.push(reverseEdge);
     }
@@ -188,6 +191,7 @@ export class TokenGraph {
         };
     }
 
+    
     private calculatePriceImpact(hops: HopInfo[]): number {
         // Simplified price impact calculation
         // In real implementation, you'd want to consider:
@@ -200,5 +204,20 @@ export class TokenGraph {
             totalImpact += impact;
         }
         return totalImpact;
+    }
+
+    private async getQuoteForExactTokens(
+        api: TypedApi<typeof polkadot_asset_hub>,
+        assetIn: XcmV4Location,
+        assetOut: XcmV4Location,
+        amount: bigint
+    ): Promise<bigint | null> {
+        const quote = await api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
+            assetIn,
+            assetOut,
+            amount,
+            true
+        );
+        return quote ? BigInt(quote) : null;
     }
 }
