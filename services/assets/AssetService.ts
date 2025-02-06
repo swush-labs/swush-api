@@ -1,7 +1,5 @@
-import { TypedApi } from 'polkadot-api';
+import { Binary, Enum, SS58String, TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
-import { WsProvider } from '@polkadot/api';
-import { ApiPromise } from '@polkadot/api';
 import { PoolService, TradeRouter } from '@galacticcouncil/sdk';
 import CacheManager from '../cache/CacheManager';
 import { Asset, AssetType, TokenPair, XcmV4Location } from './types';
@@ -9,8 +7,6 @@ import { getXcmV3Multilocation, serializeKey } from './utils';
 import fs from 'fs';
 import path from 'path';
 import { base, degen } from './external';
-import { connectPapi, connectPolkadotjs } from '../network/types';
-import { RPC_URL } from '../constants';
 import { ConnectionManager } from '../network/ConnectionManager';
 
 export class AssetService {
@@ -50,6 +46,37 @@ export class AssetService {
         return allAssets;
     }
 
+        
+    private createAssetDetails = (
+        assetValue: any,
+        metadata: any,
+        assetType: AssetType,
+        xcmLocation: any
+    ): Asset => ({
+        asset: {
+            owner: assetValue.owner,
+            issuer: assetValue.issuer,
+            admin: assetValue.admin,
+            freezer: assetValue.freezer,
+            supply: assetValue.supply,
+            deposit: assetValue.deposit,
+            min_balance: assetValue.min_balance,
+            is_sufficient: assetValue.is_sufficient,
+            accounts: assetValue.accounts,
+            sufficients: assetValue.sufficients,
+            approvals: assetValue.approvals,
+        },
+        metadata: {
+            deposit: metadata.deposit,
+            name: metadata.name.asText(),
+            symbol: metadata.symbol.asText(),
+            decimals: metadata.decimals,
+            is_frozen: metadata.is_frozen
+        },
+        type: assetType,
+        xcmLocation
+    });
+
     public async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
         const cache = CacheManager.getInstance();
     
@@ -72,37 +99,19 @@ export class AssetService {
     
         const nativeAssetsMap = new Map<string, Asset>();
         const foreignAssetsMap = new Map<string, Asset>();
-    
+
         // Process native assets with string keys
         for (const nativeAsset of nativeAssets) {
             const assetId = nativeAsset.keyArgs[0].toString();
             const metadata = nativeMetadataMap.get(assetId);
     
             if (metadata) {
-                const assetDetails: Asset = {
-                    asset: {
-                        owner: nativeAsset.value.owner,
-                        issuer: nativeAsset.value.issuer,
-                        admin: nativeAsset.value.admin,
-                        freezer: nativeAsset.value.freezer,
-                        supply: nativeAsset.value.supply,
-                        deposit: nativeAsset.value.deposit,
-                        min_balance: nativeAsset.value.min_balance,
-                        is_sufficient: nativeAsset.value.is_sufficient,
-                        accounts: nativeAsset.value.accounts,
-                        sufficients: nativeAsset.value.sufficients,
-                        approvals: nativeAsset.value.approvals,
-                    },
-                    metadata: {
-                        deposit: metadata.deposit,
-                        name: metadata.name.asText(),
-                        symbol: metadata.symbol.asText(),
-                        decimals: metadata.decimals,
-                        is_frozen: metadata.is_frozen
-                    },
-                    type: AssetType.Native,
-                    xcmLocation: getXcmV3Multilocation(BigInt(assetId))
-                };
+                const assetDetails = this.createAssetDetails(
+                    nativeAsset.value,
+                    metadata,
+                    AssetType.Native,
+                    getXcmV3Multilocation(BigInt(assetId))
+                );
                 nativeAssetsMap.set(assetId, assetDetails);
             }
         }
@@ -113,30 +122,12 @@ export class AssetService {
             const metadata = foreignMetadataMap.get(assetId);
     
             if (metadata) {
-                const assetDetails: Asset = {
-                    asset: {
-                        owner: foreignAsset.value.owner,
-                        issuer: foreignAsset.value.issuer,
-                        admin: foreignAsset.value.admin,
-                        freezer: foreignAsset.value.freezer,
-                        supply: foreignAsset.value.supply,
-                        deposit: foreignAsset.value.deposit,
-                        min_balance: foreignAsset.value.min_balance,
-                        is_sufficient: foreignAsset.value.is_sufficient,
-                        accounts: foreignAsset.value.accounts,
-                        sufficients: foreignAsset.value.sufficients,
-                        approvals: foreignAsset.value.approvals,
-                    },
-                    metadata: {
-                        deposit: metadata.deposit,
-                        name: metadata.name.asText(),
-                        symbol: metadata.symbol.asText(),
-                        decimals: metadata.decimals,
-                        is_frozen: metadata.is_frozen
-                    },
-                    type: AssetType.Foreign,
-                    xcmLocation: foreignAsset.keyArgs[0]
-                };
+                const assetDetails = this.createAssetDetails(
+                    foreignAsset.value,
+                    metadata,
+                    AssetType.Foreign,
+                    foreignAsset.keyArgs[0]
+                );
                 foreignAssetsMap.set(assetId, assetDetails);
             }
         }

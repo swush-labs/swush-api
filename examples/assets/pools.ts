@@ -6,7 +6,7 @@ import CacheManager from '../../services/cache/CacheManager';
 import { connectPapi } from "../../services/network/types";
 import { TradeRouter, PoolService, PoolBase } from '@galacticcouncil/sdk';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { base, degen } from "./external";
+import { base, degen } from "../../services/assets/external";
 import path from 'path';
 
 //enum for asset type
