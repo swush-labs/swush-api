@@ -5,6 +5,8 @@ import {
     hydration 
 } from '@polkadot-api/descriptors';
 import RpcConnection from './RpcConnection';
+import { RPC_URL } from '../constants';
+import { ApiPromise } from '@polkadot/api';
 
 // Define supported chains
 export type SupportedChains = 
@@ -70,3 +72,12 @@ export async function connectPapi(
             throw new Error(`Unsupported chain type: ${chainType}`);
     }
 } 
+
+//write a connection for polkadotjs using below example
+export async function connectPolkadotjs(rpcUrl: string): Promise<ApiPromise> {
+    const rpcConnection = RpcConnection.getInstance('polkadotjs');
+    const api = await rpcConnection.connect(rpcUrl) as ApiPromise;
+    return api;
+}
+
+

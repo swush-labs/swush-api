@@ -27,16 +27,6 @@ export class CacheService {
     }
 
     public startCacheRefresh(): void {
-        // Start XCM Registry refresh
-        this.intervals['XCM_REGISTRY'] = setInterval(async () => {
-            try {
-                await initializeRegistry();
-                console.log('XCM Registry cache refreshed');
-            } catch (error) {
-                console.error('Failed to refresh XCM Registry cache:', error);
-            }
-        }, CacheService.REFRESH_INTERVALS.XCM_REGISTRY);
-
         // Start Assets refresh
         this.intervals['ASSETS'] = setInterval(async () => {
             try {
@@ -61,7 +51,6 @@ export class CacheService {
     public async initializeAllCaches(): Promise<void> {
         try {
             await Promise.all([
-                initializeRegistry(),
                 this.assetService.getAssets()
             ]);
             console.log('All caches initialized');

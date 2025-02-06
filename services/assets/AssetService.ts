@@ -9,14 +9,14 @@ import { getXcmV3Multilocation, serializeKey } from './utils';
 import fs from 'fs';
 import path from 'path';
 import { base, degen } from './external';
-import { connectPapi } from '../network/types';
+import { connectPapi, connectPolkadotjs } from '../network/types';
 import { RPC_URL } from '../constants';
+import { ConnectionManager } from '../network/ConnectionManager';
 
 export class AssetService {
     private static instance: AssetService;
     private cacheManager: CacheManager;
-    private api: TypedApi<typeof polkadot_asset_hub> | null = null;
-    private client: any | null = null;
+    private connectionManager: ConnectionManager;
 
     private static readonly CACHE_KEYS = {
         ASSET_HUB_ASSETS: 'asset_hub_assets',
@@ -25,6 +25,7 @@ export class AssetService {
 
     private constructor() {
         this.cacheManager = CacheManager.getInstance();
+        this.connectionManager = ConnectionManager.getInstance();
     }
 
     public static getInstance(): AssetService {
@@ -34,23 +35,6 @@ export class AssetService {
         return AssetService.instance;
     }
 
-    private async connect(): Promise<void> {
-        if (!this.api) {
-            const { api, client } = await connectPapi(RPC_URL, "asset-hub");
-            this.api = api;
-            this.client = client;
-        }
-    }
-
-    public async disconnect(): Promise<void> {
-        if (this.client) {
-            await this.client.destroy();
-            this.client = null;
-            this.api = null;
-        }
-    }
-
-    // Main public method to get assets
     public async getAssets(forceRefresh = false): Promise<Map<string, Asset>> {
         const cachedAssets = this.cacheManager.get(AssetService.CACHE_KEYS.MERGED_ASSETS);
         if (!forceRefresh && cachedAssets) {
@@ -58,30 +42,23 @@ export class AssetService {
             return cachedAssets;
         }
         console.log('Fetching assets from API');
-        try {
-            await this.connect();
-            if (!this.api) throw new Error('Failed to connect to API');
-            
-            const allAssets = await this.fetchAllAssetsPapi();
-            return allAssets;
-        } catch (error) {
-            console.error('Error fetching assets:', error);
-            throw error;
-        }
+
+        const api = this.connectionManager.getAssetHubApi();
+        if (!api) throw new Error('Asset Hub API not initialized');
+        
+        const allAssets = await this.fetchAllAssetsPapi(api);
+        return allAssets;
     }
 
-    public async fetchAllAssetsPapi() {
-        if (!this.api) throw new Error('API not initialized');
-
+    public async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
         const cache = CacheManager.getInstance();
     
-
         // Get all entries in parallel using PAPI
         const [nativeAssets, nativeMetadata, foreignAssets, foreignMetadata] = await Promise.all([
-            this.api.query.Assets.Asset.getEntries(),
-            this.api.query.Assets.Metadata.getEntries(),
-            this.api.query.ForeignAssets.Asset.getEntries(),
-            this.api.query.ForeignAssets.Metadata.getEntries()
+            api.query.Assets.Asset.getEntries(),
+            api.query.Assets.Metadata.getEntries(),
+            api.query.ForeignAssets.Asset.getEntries(),
+            api.query.ForeignAssets.Metadata.getEntries()
         ]);
     
         // Create metadata maps with string keys
@@ -177,13 +154,14 @@ export class AssetService {
         nativeAssetsInfo: Map<string, Asset>,
         foreignAssetsInfo: Map<string, Asset>
     ) {
-        if (!this.api) throw new Error('API not initialized');
+        const api = this.connectionManager.getAssetHubApi();
+        if (!api) throw new Error('API not initialized');
 
         const assetHubAssets = new Map<string, Asset>();
         const poolPairsInfo: TokenPair[] = [];
     
         // Get assets from Asset Hub pools
-        const pools = await this.api.query.AssetConversion.Pools.getEntries();
+        const pools = await api.query.AssetConversion.Pools.getEntries();
     
         for (const pool of pools) {
             const poolPairs = pool.keyArgs[0] as [XcmV4Location, XcmV4Location];
@@ -270,8 +248,9 @@ export class AssetService {
         foreignAssetsInfo: Map<string, Asset>
 
     ): Promise<Map<string, Asset>> {
-        const wsProvider = new WsProvider('wss://rpc.hydradx.cloud');
-        const hydraApi = await ApiPromise.create({ provider: wsProvider });
+        const hydraApi = this.connectionManager.getHydradxApi();
+        if (!hydraApi) throw new Error('HydraDX API not initialized');
+
         const mergedAssets = new Map<string, Asset>(assetHubAssets);
     
         // Helper function to check native asset match and extract assetId
@@ -363,8 +342,9 @@ export class AssetService {
             }
     
             return mergedAssets;
-        } finally {
-            await hydraApi.disconnect();
+        } catch (error) {
+            console.error('Error enriching with HydraDX data:', error);
+            throw error;
         }
     }
 }    
