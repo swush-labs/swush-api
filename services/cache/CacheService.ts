@@ -1,19 +1,28 @@
 import { initializeRegistry, fetchXcAssetData } from '../registry/XCMRegistry';
 import CacheManager from './CacheManager';
+import { AssetService } from '../assets/AssetService';
 
 export class CacheService {
     private static instance: CacheService;
     private intervals: { [key: string]: NodeJS.Timer } = {};
+    private assetService: AssetService;
 
     // Cache refresh intervals in milliseconds
     private static REFRESH_INTERVALS = {
         XCM_REGISTRY: 5 * 60 * 1000,      // 5 minutes
         XC_ASSETS: 10 * 60 * 1000,        // 10 minutes
-        CHAIN_DATA: 1 * 60 * 1000         // 1 minute
+        CHAIN_DATA: 1 * 60 * 1000,        // 1 minute
+        ASSETS: 2 * 60 * 1000             // 2 minutes
     };
 
+    private constructor() {
+        this.assetService = AssetService.getInstance();
+    }
 
     public static getInstance(): CacheService {
+        if (!CacheService.instance) {
+            CacheService.instance = new CacheService();
+        }
         return CacheService.instance;
     }
 
@@ -28,27 +37,17 @@ export class CacheService {
             }
         }, CacheService.REFRESH_INTERVALS.XCM_REGISTRY);
 
-        // Start XC Assets refresh
-        this.intervals['XC_ASSETS'] = setInterval(async () => {
+        // Start Assets refresh
+        this.intervals['ASSETS'] = setInterval(async () => {
             try {
-                await fetchXcAssetData();
-                console.log('XC Assets cache refreshed');
+                await this.assetService.getAssets(true);
+                console.log('Assets cache refreshed');
             } catch (error) {
-                console.error('Failed to refresh XC Assets cache:', error);
+                console.error('Failed to refresh Assets cache:', error);
             }
-        }, CacheService.REFRESH_INTERVALS.XC_ASSETS);
-
-        // Start Chain Data refresh
-        this.intervals['CHAIN_DATA'] = setInterval(async () => {
-            try {
-               // TODO : refresh cache
-               // await this.dataFetcher.refreshCache();
-                console.log('Chain Data cache refreshed');
-            } catch (error) {
-                console.error('Failed to refresh Chain Data cache:', error);
-            }
-        }, CacheService.REFRESH_INTERVALS.CHAIN_DATA);
+        }, CacheService.REFRESH_INTERVALS.ASSETS);
     }
+
     public stopCacheRefresh(): void {
         Object.values(this.intervals).forEach(interval => {
             if (interval) {
@@ -63,9 +62,10 @@ export class CacheService {
         try {
             await Promise.all([
                 initializeRegistry(),
-                fetchXcAssetData(),
+                this.assetService.getAssets()
             ]);
             console.log('All caches initialized');
+            this.startCacheRefresh();
         } catch (error) {
             console.error('Failed to initialize caches:', error);
             throw error;
