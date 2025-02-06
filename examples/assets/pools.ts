@@ -7,6 +7,7 @@ import { connectPapi } from "../../services/network/types";
 import { TradeRouter, PoolService, PoolBase } from '@galacticcouncil/sdk';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { base, degen } from "./external";
+import path from 'path';
 
 //enum for asset type
 enum AssetType {
@@ -207,15 +208,14 @@ async function fetchPoolsPapi(
     foreignAssetsInfo: Map<string, Asset>,
     api: TypedApi<typeof polkadot_asset_hub>
 ) {
+    const assetHubAssets = new Map<string, Asset>();
     const poolPairsInfo: TokenPair[] = [];
-    const uniqueAssets = new Map<string, Asset>();
 
+    // Get assets from Asset Hub pools
     const pools = await api.query.AssetConversion.Pools.getEntries();
 
     for (const pool of pools) {
         const poolPairs = pool.keyArgs[0] as [XcmV4Location, XcmV4Location];
-
-        // Process both assets in the pair
         const [assetOne, assetTwo] = poolPairs;
         const assetsToProcess = [assetOne, assetTwo];
 
@@ -229,13 +229,11 @@ async function fetchPoolsPapi(
                 // Handle native assets
                 for (const entry of interior.value)
                     if (entry.type === "GeneralIndex") {
-                        //get asset id (already bigint)
                         const assetId = entry.value;
                         const nativeAssetInfo = nativeAssetsInfo.get(assetId);
                         if (nativeAssetInfo) {
-                            const xcmLocation = getXcmV3Multilocation(assetId);
-                            uniqueAssets.set(assetId.toString(), nativeAssetInfo);
-                            console.log('Added native asset:', assetId.toString());
+                            assetHubAssets.set(assetId.toString(), nativeAssetInfo);
+                            console.log('Added native asset from Asset Hub:', assetId.toString());
                         }
                     }
             }
@@ -249,58 +247,79 @@ async function fetchPoolsPapi(
                 const foreignAssetId = serializeKey(normalizedXcmLocation);
                 const foreignAssetInfo = foreignAssetsInfo.get(foreignAssetId);
                 if (foreignAssetInfo) {
-                    uniqueAssets.set(foreignAssetId, foreignAssetInfo);
-                    console.log('Added foreign asset:', foreignAssetId);
+                    assetHubAssets.set(foreignAssetId, foreignAssetInfo);
+                    console.log('Added foreign asset from Asset Hub:', foreignAssetId);
                 }
             }
         }
 
-        const tokenPair: TokenPair = {
-            pairOne: poolPairs[0],
-            pairTwo: poolPairs[1]
-        };
-        poolPairsInfo.push(tokenPair);
+        poolPairsInfo.push({ pairOne: poolPairs[0], pairTwo: poolPairs[1] });
     }
 
-    fs.writeFileSync(
-        'output/uniqueAssets.json',
-        JSON.stringify(
-            Object.fromEntries(uniqueAssets),
-            (_, value) => {
-                if (typeof value === 'bigint') {
-                    return value.toString();
-                }
-                return value;
-            },
-            2
-        )
-    );
-    // Enrich with HydraDX data
-    const enrichedAssets = await enrichWithHydraDxData(uniqueAssets);
+    const outputDir = path.join(__dirname, 'output');
+    fs.mkdirSync(outputDir, { recursive: true });
 
     fs.writeFileSync(
-        'output/enrichedAssets.json',
+        path.join(outputDir, 'assetHubAssets.json'),
         JSON.stringify(
-            Object.fromEntries(enrichedAssets),
-            (_, value) => {
-                if (typeof value === 'bigint') {
-                    return value.toString();
-                }
-                return value;
-            },
+            Object.fromEntries(assetHubAssets),
+            (_, value) => typeof value === 'bigint' ? value.toString() : value,
             2
         )
     );
 
-    return enrichedAssets;
+    // Get HydraDX assets and merge them
+    const mergedAssets = await enrichWithHydraDxData(assetHubAssets, nativeAssetsInfo, foreignAssetsInfo);
+
+    // Save final merged assets
+    fs.writeFileSync(
+        path.join(outputDir, 'mergedAssets.json'),
+        JSON.stringify(
+            Object.fromEntries(mergedAssets),
+            (_, value) => typeof value === 'bigint' ? value.toString() : value,
+            2
+        )
+    );
+
+    return mergedAssets;
 }
 
-/**
- * Enriches the unique assets with HydraDX pool information
- */
-async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
+async function enrichWithHydraDxData(
+    assetHubAssets: Map<string, Asset>,
+    nativeAssetsInfo: Map<bigint, Asset>,
+    foreignAssetsInfo: Map<string, Asset>
+): Promise<Map<string, Asset>> {
     const wsProvider = new WsProvider('wss://rpc.hydradx.cloud');
     const hydraApi = await ApiPromise.create({ provider: wsProvider });
+    const mergedAssets = new Map<string, Asset>(assetHubAssets);
+
+    // Helper function to check native asset match and extract assetId
+    const getNativeAssetId = (location: any): bigint | null => {
+        if (!location?.interior?.x3) return null;
+        const interior = location.interior.x3;
+        
+        if (!interior.some(j => j.palletInstance === 50) || 
+            !interior.some(j => j.parachain === 1000)) {
+            return null;
+        }
+
+        const generalIndexEntry = interior.find(j => j.generalIndex !== undefined);
+        return generalIndexEntry ? BigInt(generalIndexEntry.generalIndex) : null;
+    };
+
+    // Helper function to check foreign asset match
+    const getForeignAssetId = (location: any): string | null => {
+        try {
+            const normalizedLocation = {
+                parents: location.parents,
+                interior: location.interior
+            };
+            return serializeKey(normalizedLocation);
+        } catch (error) {
+            console.error('Error matching foreign asset:', error);
+            return null;
+        }
+    };
 
     try {
         const poolService = new PoolService(hydraApi);
@@ -312,59 +331,10 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
 
         console.log('First HydraDX Pool:', JSON.stringify(hydradxPools[0], null, 2));
 
-        const enrichedAssets = new Map<string, Asset>();
-
-        // Helper function to check native asset match
-        const isNativeAssetMatch = (location: any, assetId: string) => {
-            if (!location?.interior?.x3) return false;
-            const interior = location.interior.x3;
-            return interior.some(j => j.palletInstance === 50) && 
-                   interior.some(j => j.generalIndex === Number(assetId)) &&
-                   interior.some(j => j.parachain === 1000);
-        };
-
-        // // Helper function to check foreign asset match
-        // const isForeignAssetMatch = (poolLocation: any, assetLocation: XcmV4Location) => {
-        //     try {
-        //         const normalizedPoolLocation = {
-        //             parents: poolLocation.parents,
-        //             interior: poolLocation.interior
-        //         };
-        //         const normalizedAssetLocation = {
-        //             parents: assetLocation.parents,
-        //             interior: assetLocation.interior
-        //         };
-        //         return serializeKey(normalizedPoolLocation) === serializeKey(normalizedAssetLocation);
-        //     } catch (error) {
-        //         console.error('Error matching foreign asset:', error);
-        //         return false;
-        //     }
-        // };
-
-        for (const [assetId, assetInfo] of uniqueAssets.entries()) {
-            const asset = { ...assetInfo };
-            
-            // Store all pools where this asset appears
-            const matchingPools: Array<{
-                pool: PoolBase;
-                token: any;
-            }> = [];
-
-            // Check all pools for matches
-            for (const pool of hydradxPools) {
-                // Check both tokens in the pool
-                for (const token of pool.tokens) {
-                    if (asset.type === AssetType.Native && isNativeAssetMatch(token.location, assetId)) {
-                        matchingPools.push({ pool, token });
-                    }
-                }
-            }
-
-            // If we found any matches, use the first one
-            // You could also implement logic to choose the best pool based on some criteria
-            if (matchingPools.length > 0) {
-                const { pool, token } = matchingPools[0];
-                asset.hydradx = {
+        // Process all HydraDX pools
+        for (const pool of hydradxPools) {
+            for (const token of pool.tokens) {
+                const hydradxInfo = {
                     assetId: token.id,
                     location: token.location,
                     poolAddress: pool.address,
@@ -372,14 +342,47 @@ async function enrichWithHydraDxData(uniqueAssets: Map<string, Asset>) {
                     balance: token.balance,
                     existentialDeposit: token.existentialDeposit
                 };
-                console.log('Matched asset:', assetId, 'with HydraDX asset:', token.id);
-                console.log('Found in', matchingPools.length, 'pools');
-            }
 
-            enrichedAssets.set(assetId, asset);
+                // Try to match native asset first
+                const nativeAssetId = getNativeAssetId(token.location);
+                if (nativeAssetId !== null) {
+                    const nativeAsset = nativeAssetsInfo.get(nativeAssetId);
+                    if (nativeAsset) {
+                        const assetIdStr = nativeAssetId.toString();
+                        const existingAsset = mergedAssets.get(assetIdStr);
+                        
+                        if (existingAsset) {
+                            existingAsset.hydradx = hydradxInfo;
+                            console.log('Updated existing Asset Hub asset with HydraDX info:', assetIdStr);
+                        } else {
+                            const newAsset = { ...nativeAsset, hydradx: hydradxInfo };
+                            mergedAssets.set(assetIdStr, newAsset);
+                            console.log('Added new native asset from HydraDX:', assetIdStr);
+                        }
+                        continue;
+                    }
+                }
+
+                // Try to match foreign asset
+                const foreignId = getForeignAssetId(token.location);
+                if (foreignId !== null) {
+                    const foreignAsset = foreignAssetsInfo.get(foreignId);
+                    if (foreignAsset) {
+                        const existingAsset = mergedAssets.get(foreignId);
+                        if (existingAsset) {
+                            existingAsset.hydradx = hydradxInfo;
+                            console.log('Updated existing foreign Asset Hub asset with HydraDX info:', foreignId);
+                        } else {
+                            const newAsset = { ...foreignAsset, hydradx: hydradxInfo };
+                            mergedAssets.set(foreignId, newAsset);
+                            console.log('Added new foreign asset from HydraDX:', foreignId);
+                        }
+                    }
+                }
+            }
         }
 
-        return enrichedAssets;
+        return mergedAssets;
     } finally {
         await hydraApi.disconnect();
     }
