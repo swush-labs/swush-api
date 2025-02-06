@@ -77,8 +77,7 @@ export class AssetService {
         xcmLocation
     });
 
-    public async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
-        const cache = CacheManager.getInstance();
+    private async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
     
         // Get all entries in parallel using PAPI
         const [nativeAssets, nativeMetadata, foreignAssets, foreignMetadata] = await Promise.all([
@@ -131,14 +130,10 @@ export class AssetService {
                 foreignAssetsMap.set(assetId, assetDetails);
             }
         }
-    
-        // Cache the results
-        cache.set('nativeAssets', nativeAssetsMap);
-        cache.set('foreignAssets', foreignAssetsMap);
-    
+
         console.log('All assets and metadata fetched and cached');
-        await this.fetchPoolsPapi(nativeAssetsMap, foreignAssetsMap);
-        return nativeAssetsMap;
+        const mergedAssets = await this.fetchPoolsPapi(nativeAssetsMap, foreignAssetsMap);
+        return mergedAssets;
     }
     
     public async fetchPoolsPapi(
