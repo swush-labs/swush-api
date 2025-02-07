@@ -77,7 +77,7 @@ export class AssetService {
         xcmLocation
     });
 
-    private async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
+    public async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
     
         // Get all entries in parallel using PAPI
         const [nativeAssets, nativeMetadata, foreignAssets, foreignMetadata] = await Promise.all([
@@ -256,6 +256,11 @@ export class AssetService {
         // Helper function to check foreign asset match
         const getForeignAssetId = (location: any): string | null => {
             try {
+                // Check if location and required properties exist
+                if (!location || typeof location.parents === 'undefined' || !location.interior) {
+                    return null;
+                }
+
                 const normalizedLocation = {
                     parents: location.parents,
                     interior: location.interior
