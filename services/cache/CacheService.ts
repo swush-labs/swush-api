@@ -12,7 +12,7 @@ export class CacheService {
         XCM_REGISTRY: 5 * 60 * 1000,      // 5 minutes
         XC_ASSETS: 10 * 60 * 1000,        // 10 minutes
         CHAIN_DATA: 1 * 60 * 1000,        // 1 minute
-        ASSETS: 2 * 60 * 1000             // 2 minutes
+        ASSETS: 30 * 60 * 1000             // 2 minutes
     };
 
     private constructor() {

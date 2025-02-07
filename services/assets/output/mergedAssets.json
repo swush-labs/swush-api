@@ -305,7 +305,7 @@
       },
       "poolAddress": "7NL2VJr35Afnd7Ba3kFMsqp4HfUaVr9x57WNCTp1LBDpS3X3",
       "poolType": "Xyk",
-      "balance": "9652705519300298",
+      "balance": "10610328316159323",
       "existentialDeposit": "1"
     }
   },
@@ -1515,7 +1515,7 @@
       },
       "poolAddress": "7LVGEVLFXpsCCtnsvhzkSMQARU7gRVCtwMckG7u7d3V6FVvG",
       "poolType": "Stableswap",
-      "balance": "7746094292887",
+      "balance": "7754078857661",
       "existentialDeposit": "10000"
     }
   },
@@ -1577,7 +1577,7 @@
       },
       "poolAddress": "7LVGEVLFXpsCCtnsvhzkSMQARU7gRVCtwMckG7u7d3V6FVvG",
       "poolType": "Stableswap",
-      "balance": "7522779450649",
+      "balance": "7523119544675",
       "existentialDeposit": "10000"
     }
   },
@@ -2004,7 +2004,7 @@
       },
       "poolAddress": "7NL2VJr35Afnd7Ba3kFMsqp4HfUaVr9x57WNCTp1LBDpS3X3",
       "poolType": "Xyk",
-      "balance": "85391707569976334",
+      "balance": "77707899466689992",
       "existentialDeposit": "200000000000000"
     }
   },
@@ -2663,7 +2663,7 @@
       },
       "poolAddress": "7N1dToULCjp43qr2pjbdL4vpcbu9HSmoKkDweV4rtRgc6ojZ",
       "poolType": "Xyk",
-      "balance": "122658087098042932",
+      "balance": "122518204445633396",
       "existentialDeposit": "1"
     }
   },
@@ -2849,7 +2849,7 @@
       },
       "poolAddress": "7JWYQ2DYprVUd9ZDrg4qaVK61uCK48Kf9Gpdx4R8CzTNfq9J",
       "poolType": "Xyk",
-      "balance": "3858728270708656347",
+      "balance": "3560226693652084561",
       "existentialDeposit": "1"
     }
   },
@@ -4523,7 +4523,7 @@
       },
       "poolAddress": "7KzUj7umfp35swjku9WS22tFZrznAZ8FrYEdCAiJNCzsmXVb",
       "poolType": "Xyk",
-      "balance": "4668669503470675895",
+      "balance": "4668733404210280380",
       "existentialDeposit": "1"
     }
   },
@@ -5019,7 +5019,7 @@
       },
       "poolAddress": "7Hhnk53koe9tRVJ74FZfnZajrtp9Bpw9ZZwrGQc5GLMzzCCu",
       "poolType": "Xyk",
-      "balance": "259094096099347",
+      "balance": "240819642511947",
       "existentialDeposit": "1"
     }
   },
@@ -5515,7 +5515,7 @@
       },
       "poolAddress": "7LBSsk2iPwaoxvcvQzfC34PY7ebt1amawAWzHR1YK4W7PgGg",
       "poolType": "Xyk",
-      "balance": "15237272908018",
+      "balance": "15436222406682",
       "existentialDeposit": "1"
     }
   },

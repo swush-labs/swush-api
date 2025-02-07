@@ -1,21 +1,21 @@
 import { TypedApi } from 'polkadot-api';
-import { XcmV4Location } from './pools';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
+import { Asset, XcmV4Location } from './types';
 
 export interface Node {
-    asset: XcmV4Location;
-    symbol: string;
-    decimals: number;
+    assetId: string;      // Using assetId as unique identifier
+    asset: Asset;         // Full asset details
+    xcmLocation: XcmV4Location;
 }
 
 export interface Edge {
-    from: string;
-    to: string;
+    from: string;         // assetId of from token
+    to: string;          // assetId of to token
     poolId: string;
     liquidity: bigint;
     fee: number;
-    dex: string;  // e.g., 'assetHub', 'hydraDx'
-    poolType?: string;  // For HydraDX different pool types
+    dex: 'assetHub' | 'hydraDx';
+    poolType?: string;    // For HydraDX different pool types
 }
 
 export interface HopInfo {
@@ -42,51 +42,66 @@ export class TokenGraph {
     private nodes: Map<string, Node> = new Map();
     private adjacencyList: Map<string, Edge[]> = new Map();
 
-    addNode(asset: XcmV4Location, symbol: string, decimals: number) {
-        this.nodes.set(symbol, { asset, symbol, decimals });
-        if (!this.adjacencyList.has(symbol)) {
-            this.adjacencyList.set(symbol, []);
+    addNode(assetId: string, asset: Asset) {
+        this.nodes.set(assetId, {
+            assetId,
+            asset,
+            xcmLocation: asset.xcmLocation
+        });
+        if (!this.adjacencyList.has(assetId)) {
+            this.adjacencyList.set(assetId, []);
         }
     }
 
     addEdge(
-        fromSymbol: string,
-        toSymbol: string,
+        fromAssetId: string,
+        toAssetId: string,
         poolId: string,
         liquidity: bigint,
         fee: number,
-        dex: string,
+        dex: 'assetHub' | 'hydraDx',
         poolType?: string
     ) {
-        if (!this.nodes.has(fromSymbol) || !this.nodes.has(toSymbol)) {
-            throw new Error(`One or both tokens not found: ${fromSymbol}, ${toSymbol}`);
+        if (!this.nodes.has(fromAssetId) || !this.nodes.has(toAssetId)) {
+            throw new Error(`One or both assets not found: ${fromAssetId}, ${toAssetId}`);
         }
 
-        // Create the forward edge
-        const edge: Edge = { from: fromSymbol, to: toSymbol, poolId, liquidity, fee, dex, poolType };
-        this.adjacencyList.get(fromSymbol)?.push(edge);
+        // Create bidirectional edges for the pool
+        const edge: Edge = { 
+            from: fromAssetId, 
+            to: toAssetId, 
+            poolId, 
+            liquidity, 
+            fee, 
+            dex, 
+            poolType 
+        };
+        this.adjacencyList.get(fromAssetId)?.push(edge);
         
-        // Create the reverse edge
-        const reverseEdge: Edge = { ...edge, from: toSymbol, to: fromSymbol };
-        this.adjacencyList.get(toSymbol)?.push(reverseEdge);
+        const reverseEdge: Edge = { 
+            ...edge, 
+            from: toAssetId, 
+            to: fromAssetId 
+        };
+        this.adjacencyList.get(toAssetId)?.push(reverseEdge);
     }
 
-    getNode(symbol: string): Node | undefined {
-        return this.nodes.get(symbol);
+    getNode(assetId: string): Node | undefined {
+        return this.nodes.get(assetId);
     }
 
-    getEdge(fromSymbol: string, toSymbol: string): Edge | undefined {
-        return this.adjacencyList.get(fromSymbol)?.find(edge => edge.to === toSymbol);
+    getEdge(fromAssetId: string, toAssetId: string): Edge | undefined {
+        return this.adjacencyList.get(fromAssetId)?.find(edge => edge.to === toAssetId);
     }
 
     findAllPaths(
-        startSymbol: string,
-        endSymbol: string,
+        startAssetId: string,
+        endAssetId: string,
         maxHops: number = 3,
         preferredDex?: string
     ): string[][] {
-        if (!this.nodes.has(startSymbol) || !this.nodes.has(endSymbol)) {
-            throw new Error(`Invalid start or end token: ${startSymbol}, ${endSymbol}`);
+        if (!this.nodes.has(startAssetId) || !this.nodes.has(endAssetId)) {
+            throw new Error(`Invalid start or end asset: ${startAssetId}, ${endAssetId}`);
         }
 
         const visited = new Set<string>();
@@ -123,7 +138,7 @@ export class TokenGraph {
             visited.delete(current);
         };
 
-        dfs(startSymbol, endSymbol, [], 0);
+        dfs(startAssetId, endAssetId, [], 0);
         return paths;
     }
 
@@ -143,24 +158,24 @@ export class TokenGraph {
         const hops: HopInfo[] = [];
 
         for (let i = 0; i < path.length - 1; i++) {
-            const fromSymbol = path[i];
-            const toSymbol = path[i + 1];
+            const fromAssetId = path[i];
+            const toAssetId = path[i + 1];
             
-            const edge = this.getEdge(fromSymbol, toSymbol);
-            if (!edge) throw new Error(`No pool found between ${fromSymbol} and ${toSymbol}`);
+            const edge = this.getEdge(fromAssetId, toAssetId);
+            if (!edge) throw new Error(`No pool found between ${fromAssetId} and ${toAssetId}`);
 
-            const fromNode = this.nodes.get(fromSymbol)!;
-            const toNode = this.nodes.get(toSymbol)!;
+            const fromNode = this.nodes.get(fromAssetId)!;
+            const toNode = this.nodes.get(toAssetId)!;
 
             const quote = await quoteProvider(
-                fromNode.asset,
-                toNode.asset,
+                fromNode.xcmLocation,
+                toNode.xcmLocation,
                 currentAmount,
                 edge.dex
             );
 
             if (!quote) {
-                throw new Error(`No quote available for ${fromSymbol} to ${toSymbol}`);
+                throw new Error(`No quote available for ${fromAssetId} to ${toAssetId}`);
             }
 
             const hopOutput = quote;
@@ -168,8 +183,8 @@ export class TokenGraph {
             totalFee += edge.fee;
 
             hops.push({
-                from: fromSymbol,
-                to: toSymbol,
+                from: fromAssetId,
+                to: toAssetId,
                 amountIn: currentAmount,
                 amountOut: hopOutput,
                 fee: edge.fee,

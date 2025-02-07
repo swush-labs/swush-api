@@ -3,12 +3,14 @@
 		"target": "es2020",                      // Modern JavaScript target
 		"module": "commonjs",                   // Compatible with Node.js
 		"lib": ["es2020", "dom"],               // ES2020 features and DOM types
-		"allowJs": true,                        // Allow using JavaScript files
-		"outDir": "build",                      // Output directory for compiled files
-		"rootDir": "src",                       // Root directory for source files
+		"declaration": true,                    // Generate .d.ts files
+		"declarationMap": true,                // Generate sourcemaps for .d.ts
+		"sourceMap": true,                     // Generate sourcemaps for .js
+		"outDir": "./dist",                    // Output to dist instead of build
+		"rootDir": "./",                    // Source files in src
 		
 		// Basic TypeScript safety checks
-		"strict": false,                        // Turn off strict mode (umbrella setting)
+		"strict": true,                        // Enable all strict type checking
 		"noImplicitAny": false,                 // Allow variables with implicit "any" type
 		"strictNullChecks": false,              // Allow null and undefined in any type
 		"strictFunctionTypes": false,           // Allow more flexible function types
@@ -18,9 +20,18 @@
 		// Dependency resolution
 		"allowSyntheticDefaultImports": true,  // Allow default imports from modules
 		"esModuleInterop": true,               // Improve compatibility with CommonJS modules
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"moduleResolution": "node",
 		"resolveJsonModule": true,             // Allow importing JSON files
-		"experimentalDecorators": true         // Enable support for decorators
+		"baseUrl": "./",
+		"paths": {
+			"@/*": ["services/*"]
+		}
 	},
-	"include": ["src"],                        // Files to include in the project
-	"exclude": ["node_modules", "build"]      // Exclude unnecessary directories
+	"include": [
+		"services/**/*",
+		"examples/**/*"
+	],
+	"exclude": ["node_modules", "dist", "**/__tests__/*"]
 }

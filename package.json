@@ -1,16 +1,22 @@
 {
   "name": "dex-aggregator-service",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/services/index.js",
+  "types": "dist/services/index.d.ts",
+  "files": [
+    "dist/services"
+  ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "prepare": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:registry": "jest services/registry/__tests__",
     "test:cache": "jest services/cache/__tests__",
-    "test:network": "jest services/network/__tests__"
+    "test:network": "jest services/network/__tests__",
+    "dev": "tsc -w"
   },
   "dependencies": {
     "@acala-network/chopsticks": "^1.0.1",
