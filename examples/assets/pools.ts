@@ -1,4 +1,4 @@
-import { RPC_URL } from "../../services/constants";
+import { AH_RPC_URL } from "../../services/constants";
 import { SS58String, TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub, XcmV3Junction, XcmV3Junctions } from '@polkadot-api/descriptors';
 import fs from 'fs';
@@ -390,7 +390,7 @@ async function enrichWithHydraDxData(
 
 async function main() {
     try {
-        const { api, client } = await connectPapi(RPC_URL, "asset-hub");
+        const { api, client } = await connectPapi(AH_RPC_URL, "asset-hub");
 
         await fetchAllAssetsPapi(api);
         client.destroy();

@@ -6,7 +6,7 @@ import {
   ss58Encode
 } from "@polkadot-labs/hdkd-helpers"
 import { getPolkadotSigner } from "polkadot-api/signer"
-import { RPC_URL, TEST_RPC } from "../../services/constants"
+import { AH_RPC_URL, TEST_RPC } from "../../services/constants"
 import { connectPapi } from "../../services/network/types"
 import { MultiAddress } from "@polkadot-api/descriptors"
 import WebSocket from 'ws';

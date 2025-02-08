@@ -11,7 +11,7 @@ export const CACHE_KEYS = {
 
 export const NETWORKS_SUPPORTED = ['polkadot'];
 
-export const RPC_URL = 'wss://asset-hub-polkadot.dotters.network';
+export const AH_RPC_URL = 'wss://asset-hub-polkadot.dotters.network';
 //TEST_RPC
 export const TEST_RPC = 'ws://localhost:8000'
 export const TEST_RPC_ASSET_HUB = 'ws://localhost:3421'

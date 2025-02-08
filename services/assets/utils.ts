@@ -28,4 +28,15 @@ export function getXcmV3Multilocation(assetId: bigint | number): XcmV4Location {
             XcmV3Junction.GeneralIndex(BigInt(assetId)),
         ]),
     };
-} 
+}
+
+// Helper function to create XCM location
+export function createXcmLocation(assetId: number) {
+    return {
+        parents: 0,
+        interior: XcmV3Junctions.X2([
+            XcmV3Junction.PalletInstance(50),
+            XcmV3Junction.GeneralIndex(BigInt(assetId)),
+        ])
+    };
+}

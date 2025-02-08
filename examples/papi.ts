@@ -1,4 +1,4 @@
-import { RPC_URL, TEST_RPC_ASSET_HUB } from "../services/constants";
+import { AH_RPC_URL, TEST_RPC_ASSET_HUB } from "../services/constants";
 
 import { connectPapi } from '../services/network/types';
 import RpcConnection from '../services/network/RpcConnection';

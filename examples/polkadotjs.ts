@@ -1,6 +1,6 @@
 
 import RpcConnection from '../services/network/RpcConnection';
-import { RPC_URL } from '../services/constants';
+import { AH_RPC_URL } from '../services/constants';
 import { AssetDetails } from '@polkadot/types/interfaces/assets/types';
 import {MultiLocationV4} from '@polkadot/types/interfaces/xcm/types';
 import { WsProvider, ApiPromise } from '@polkadot/api';
@@ -8,7 +8,7 @@ import { WsProvider, ApiPromise } from '@polkadot/api';
 async function main() {
     // Initialize the cache
     const rpcConnection = RpcConnection.getInstance('polkadotjs');
-    const api = await rpcConnection.connect(RPC_URL) as ApiPromise;
+    const api = await rpcConnection.connect(AH_RPC_URL) as ApiPromise;
 
     console.log('Successfully connected to the blockchain node.');
     const asset = await api.query.assets.asset.entries();

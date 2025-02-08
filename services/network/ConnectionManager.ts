@@ -2,7 +2,7 @@ import { TypedApi, PolkadotClient } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { ApiPromise } from '@polkadot/api';
 import { connectPapi, connectPolkadotjs } from './types';
-import { RPC_URL } from '../constants';
+import { AH_RPC_URL } from '../constants';
 
 type NetworkConnections = {
     assetHub: { api: TypedApi<typeof polkadot_asset_hub>; client: PolkadotClient } | null;
@@ -28,7 +28,7 @@ export class ConnectionManager {
     public async initialize(): Promise<void> {
         try {
             // Initialize Asset Hub connection
-            this.connections.assetHub = await connectPapi(RPC_URL, 'asset-hub');
+            this.connections.assetHub = await connectPapi(AH_RPC_URL, 'asset-hub');
             
             // Initialize HydraDX connection
             this.connections.hydradx = await connectPolkadotjs('wss://rpc.hydradx.cloud');

@@ -17,12 +17,14 @@ describe('TokenGraph', () => {
         graph = new TokenGraph();
         
         // Add nodes
-        graph.addNode(createXcmLocation(1), "DOT", 10);
-        graph.addNode(createXcmLocation(2), "USDC", 6);
-        graph.addNode(createXcmLocation(3), "ETH", 18);
-        graph.addNode(createXcmLocation(4), "PINK", 18);
-        graph.addNode(createXcmLocation(5), "MYTH", 12);
-        graph.addNode(createXcmLocation(6), "BTC", 8);
+        graph.addNode(createXcmLocation(1), "DOT");
+        graph.addNode(createXcmLocation(2), "USDC");
+        graph.addNode(createXcmLocation(3), "ETH");
+        graph.addNode(createXcmLocation(4), "PINK");
+
+        graph.addNode(createXcmLocation(5), "MYTH");
+        graph.addNode(createXcmLocation(6), "BTC");
+
     });
 
     describe('Basic Graph Operations', () => {
