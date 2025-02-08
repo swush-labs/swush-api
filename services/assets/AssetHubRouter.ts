@@ -102,43 +102,23 @@ export class AssetHubRouter {
         try {
             const hops: RouteQuote['hops'] = [];
             
-            // Prepare assets for the path
-            const pathAssets = [];
+            // Prepare pathAssets of type Asset
+            const pathAssets: { from: Asset, to: Asset }[] = [];
 
-/* 
-            // Prepare batch calls for reserves
-            const reserveCalls = [];
-            //TODO:reserve check when needed
             for (let i = 0; i < path.length - 1; i++) {
                 const fromAsset = this.assetMap.get(path[i]);
                 const toAsset = this.assetMap.get(path[i + 1]);
                 
                 if (!fromAsset || !toAsset) return null;
-                
                 pathAssets.push({ from: fromAsset, to: toAsset });
-                
-                // Add reserve query to batch
-                reserveCalls.push(
-                    this.api.apis.AssetConversionApi.get_reserves(
-                        fromAsset.xcmLocation,
-                        toAsset.xcmLocation
-                    )
-                );
             }
-
-            // Execute reserve batch query
-            const reserves = await Promise.all(reserveCalls);
-            
-            // If any reserves are missing, path is invalid
-            if (reserves.some(r => !r)) return null; */
 
             // Calculate quotes for each hop
             let currentAmount = amountIn;
+            let toAssetDecimals = 0;
             
             for (let i = 0; i < pathAssets.length; i++) {
                 const { from: fromAsset, to: toAsset } = pathAssets[i];
-                // const poolReserves = reserves[i]!;
-
 
                 // Get quote for this hop including fee calculation
                 const quote = await this.api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
@@ -150,36 +130,23 @@ export class AssetHubRouter {
 
                 if (!quote) return null;
 
-                // const priceImpact = this.calculateHopPriceImpact(
-                //     currentAmount,
-                //     quote,
-                //     [poolReserves[0], poolReserves[1]]
-                // );
-
-
                 hops.push({
                     from: path[i],
                     to: path[i + 1],
                     amountIn: currentAmount,
-                    amountOut: quote,
-                    // reserves: [poolReserves[0], poolReserves[1]],
-                    // priceImpact
-
+                    amountOut: quote
                 });
 
+                toAssetDecimals = toAsset.metadata.decimals;
                 currentAmount = quote;
             }
 
-            // const totalPriceImpact = hops.reduce((total, hop) => total + hop.priceImpact, 0);
-
-
+            const finalAmount = currentAmount / BigInt(10 ** toAssetDecimals);
             return {
                 path,
-                expectedOutput: hops[hops.length - 1].amountOut,
-                hops,
-                // totalPriceImpact
+                expectedOutput: finalAmount,
+                hops
             };
-
 
         } catch (error) {
             console.error('Error calculating path quote:', error);
