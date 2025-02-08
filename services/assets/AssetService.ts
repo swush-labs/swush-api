@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { base, degen } from './external';
 import { ConnectionManager } from '../network/ConnectionManager';
+import { AssetHubRouter } from './AssetHubRouter';
 
 export class AssetService {
     private static instance: AssetService;
@@ -142,18 +143,22 @@ export class AssetService {
     ) {
         const api = this.connectionManager.getAssetHubApi();
         if (!api) throw new Error('API not initialized');
-
-        const assetHubAssets = new Map<string, Asset>();
-        const poolPairsInfo: TokenPair[] = [];
     
         // Get assets from Asset Hub pools
         const pools = await api.query.AssetConversion.Pools.getEntries();
-    
+
+        const assetHubPoolAssets = new Map<string, Asset>();
+        const poolAssetPairs = new Set<string>();
+
+        // First pass: collect all assets that are actually in pools
         for (const pool of pools) {
             const poolPairs = pool.keyArgs[0] as [XcmV4Location, XcmV4Location];
             const [assetOne, assetTwo] = poolPairs;
             const assetsToProcess = [assetOne, assetTwo];
-    
+
+            let assetOneId: string | null = null;
+            let assetTwoId: string | null = null;
+
             for (const asset of assetsToProcess) {
                 const { parents, interior } = asset;
                 if (
@@ -164,16 +169,15 @@ export class AssetService {
                     // Handle native assets
                     for (const entry of interior.value)
                         if (entry.type === "GeneralIndex") {
-                            const assetId = entry.value;
-                            const nativeAssetInfo = nativeAssetsInfo.get(assetId.toString());
+                            const assetId = entry.value.toString();
+                            const nativeAssetInfo = nativeAssetsInfo.get(assetId);
                             if (nativeAssetInfo) {
-                                assetHubAssets.set(assetId.toString(), nativeAssetInfo);
-                                console.log('Added native asset from Asset Hub:', assetId.toString());
+                                assetHubPoolAssets.set(assetId, nativeAssetInfo);
+                                if (!assetOneId) assetOneId = assetId;
+                                else assetTwoId = assetId;
                             }
-
                         }
-                }
-                else {
+                } else {
                     // Handle foreign assets
                     const normalizedXcmLocation = {
                         parents: asset.parents,
@@ -183,17 +187,30 @@ export class AssetService {
                     const foreignAssetId = serializeKey(normalizedXcmLocation);
                     const foreignAssetInfo = foreignAssetsInfo.get(foreignAssetId);
                     if (foreignAssetInfo) {
-                        assetHubAssets.set(foreignAssetId, foreignAssetInfo);
-                        console.log('Added foreign asset from Asset Hub:', foreignAssetId);
+                        assetHubPoolAssets.set(foreignAssetId, foreignAssetInfo);
+                        if (!assetOneId) assetOneId = foreignAssetId;
+                        else assetTwoId = foreignAssetId;
                     }
                 }
             }
-    
-            poolPairsInfo.push({ pairOne: poolPairs[0], pairTwo: poolPairs[1] });
+
+            // Store valid pool pairs
+            if (assetOneId && assetTwoId) {
+                poolAssetPairs.add(`${assetOneId}-${assetTwoId}`);
+            }
         }
 
-        //set cache for assetHubAssets
-        this.cacheManager.set(AssetService.CACHE_KEYS.ASSET_HUB_ASSETS, assetHubAssets);
+        // Initialize router only with assets that are in pools
+        const assetHubRouter = new AssetHubRouter(api, assetHubPoolAssets);
+
+        // Add pools using the stored pairs
+        for (const pairStr of poolAssetPairs) {
+            const [assetOneId, assetTwoId] = pairStr.split('-');
+            assetHubRouter.addPool(assetOneId, assetTwoId);
+        }
+
+        // Store the router instance for later use
+        this.cacheManager.set('asset_hub_router', assetHubRouter);
     
         const outputDir = path.join(__dirname, 'output');
         fs.mkdirSync(outputDir, { recursive: true });
@@ -201,14 +218,14 @@ export class AssetService {
         fs.writeFileSync(
             path.join(outputDir, 'assetHubAssets.json'),
             JSON.stringify(
-                Object.fromEntries(assetHubAssets),
+                Object.fromEntries(assetHubPoolAssets),
                 (_, value) => typeof value === 'bigint' ? value.toString() : value,
                 2
             )
         );
     
         // Get HydraDX assets and merge them
-        const mergedAssets = await this.enrichWithHydraDxData(assetHubAssets, nativeAssetsInfo, foreignAssetsInfo);
+        const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo, foreignAssetsInfo);
     
 
         // Save final merged assets
@@ -223,7 +240,7 @@ export class AssetService {
 
         //set cache for mergedAssets
         this.cacheManager.set(AssetService.CACHE_KEYS.MERGED_ASSETS, mergedAssets);
-    
+        this.cacheManager.set('token_graph', assetHubRouter.getTokenGraph());
         return mergedAssets;
     }
     

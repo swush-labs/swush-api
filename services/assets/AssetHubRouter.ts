@@ -1,7 +1,8 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { TokenGraph } from './TokenGraph';
-import { Asset, XcmV4Location } from '../types';
+import { Asset } from './types';
+
 
 export interface RouteQuote {
     path: string[];
@@ -28,40 +29,40 @@ export class AssetHubRouter {
     ) {
         this.api = api;
         this.assetMap = assetMap;
-        this.tokenGraph = this.initializeGraph(assetMap);
+        this.tokenGraph = new TokenGraph();
+        
+        // Initialize graph with ALL assets
+        for (const [assetId, asset] of assetMap) {
+            this.tokenGraph.addNode(assetId, asset);
+        }
     }
 
-    private initializeGraph(assets: Map<string, Asset>): TokenGraph {
-        const graph = new TokenGraph();
-        
-        // Add all assets as nodes
-        for (const [assetId, asset] of assets) {
-            graph.addNode(assetId, asset);
-        }
-        
-        return graph;
+    // Add method to expose graph
+    public getTokenGraph(): TokenGraph {
+        return this.tokenGraph;
     }
 
-    public async initializePools(): Promise<void> {
-        const pools = await this.api.query.AssetConversion.Pools.getEntries();
-        
-        for (const pool of pools) {
-            const [assetOne, assetTwo] = pool.keyArgs[0] as [XcmV4Location, XcmV4Location];
-            const assetOneId = this.getAssetIdFromLocation(assetOne);
-            const assetTwoId = this.getAssetIdFromLocation(assetTwo);
+    // Method to initialize from cached graph
+    public static fromCachedGraph(
+        api: TypedApi<typeof polkadot_asset_hub>,
+        assetMap: Map<string, Asset>,
+        cachedGraph: TokenGraph
+    ): AssetHubRouter {
+        const router = new AssetHubRouter(api, assetMap);
+        router.tokenGraph = cachedGraph;
+        return router;
+    }
 
-            if (assetOneId && assetTwoId) {
-                // Add edge without liquidity - we'll fetch it real-time when needed
-                this.tokenGraph.addEdge(
-                    assetOneId,
-                    assetTwoId,
-                    `${assetOneId}-${assetTwoId}`,
-                    BigInt(0), // Placeholder liquidity
-                    0.003,
-                    'assetHub'
-                );
-            }
-        }
+    public addPool(assetOneId: string, assetTwoId: string): void {
+        // Add edge without liquidity - we'll fetch it real-time when needed
+        this.tokenGraph.addEdge(
+            assetOneId,
+            assetTwoId,
+            `${assetOneId}-${assetTwoId}`,
+            BigInt(0), // Placeholder liquidity
+            0.003,
+            'assetHub'
+        );
     }
 
     public async findBestRoute(
@@ -70,16 +71,15 @@ export class AssetHubRouter {
         amountIn: bigint
     ): Promise<RouteQuote | null> {
         try {
-            // Find all possible paths
+            // Use cached graph structure for path finding
             const paths = this.tokenGraph.findAllPaths(fromAssetId, toAssetId, 3, 'assetHub');
             if (paths.length === 0) return null;
 
-            // Calculate metrics for each path with real-time data
+            // Real-time quotes for each path
             const pathQuotes = await Promise.all(
                 paths.map(path => this.calculatePathQuote(path, amountIn))
             );
 
-            // Filter out failed quotes and find best route
             const validQuotes = pathQuotes.filter((quote): quote is RouteQuote => quote !== null);
             if (validQuotes.length === 0) return null;
 
@@ -111,27 +111,31 @@ export class AssetHubRouter {
                 if (!fromAsset || !toAsset) continue;
 
                 // Get real-time reserves
-                const reserves = await this.api.call.assetConversionApi.getReserves(
+                const reserves = await this.api.apis.AssetConversionApi.get_reserves(
                     fromAsset.xcmLocation,
                     toAsset.xcmLocation
                 );
 
+
+
                 if (!reserves) continue;
 
                 // Get quote for this hop
-                const quote = await this.api.call.assetConversionApi.quotePriceExactTokensForTokens(
+                const quote = await this.api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
                     fromAsset.xcmLocation,
                     toAsset.xcmLocation,
                     currentAmount
                 );
+
 
                 if (!quote) continue;
 
                 const priceImpact = this.calculateHopPriceImpact(
                     currentAmount,
                     BigInt(quote),
-                    reserves
+                    [reserves[0], reserves[1]]
                 );
+
 
                 hops.push({
                     from: fromAssetId,
@@ -176,17 +180,36 @@ export class AssetHubRouter {
         return Number((expectedOut - amountOut) * BigInt(10000) / expectedOut) / 10000;
     }
 
-    private getAssetIdFromLocation(location: XcmV4Location): string | null {
-        for (const [assetId, asset] of this.assetMap) {
-            if (this.compareXcmLocations(asset.xcmLocation, location)) {
-                return assetId;
-            }
-        }
-        return null;
+}
+
+
+/*
+
+// In your application code
+
+// In your application code
+async function findRoute(
+    fromAssetId: string,
+    toAssetId: string,
+    amount: bigint
+): Promise<RouteQuote | null> {
+    const assetService = AssetService.getInstance();
+    const cacheManager = CacheManager.getInstance();
+    const connectionManager = ConnectionManager.getInstance();
+    
+    // Get cached graph and assets
+    const cachedGraph = cacheManager.get('token_graph');
+    const assets = await assetService.getAssets();
+    const api = connectionManager.getAssetHubApi();
+    
+    if (!cachedGraph || !api) {
+        throw new Error('Graph or API not initialized');
     }
 
-    private compareXcmLocations(a: XcmV4Location, b: XcmV4Location): boolean {
-        // Implement XCM location comparison logic
-        return JSON.stringify(a) === JSON.stringify(b);
-    }
+    // Create router with cached graph
+    const router = AssetHubRouter.fromCachedGraph(api, assets, cachedGraph);
+    
+    // Get real-time route
+    return router.findBestRoute(fromAssetId, toAssetId, amount);
 }
+} */
