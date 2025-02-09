@@ -12,11 +12,7 @@ export interface RouteQuote {
         to: string;
         amountIn: bigint;
         amountOut: bigint;
-        // reserves: [bigint, bigint];
-        // priceImpact: number;
     }[];
-    // totalPriceImpact: number;
-
 }
 
 export class AssetHubRouter {

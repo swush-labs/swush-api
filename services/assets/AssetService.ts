@@ -9,16 +9,11 @@ import path from 'path';
 import { base, degen } from './external';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
-
+import { CACHE_KEYS } from '../constants';
 export class AssetService {
     private static instance: AssetService;
     private cacheManager: CacheManager;
     private connectionManager: ConnectionManager;
-
-    private static readonly CACHE_KEYS = {
-        ASSET_HUB_ASSETS: 'asset_hub_assets',
-        MERGED_ASSETS: 'merged_assets'
-    };
 
     private constructor() {
         this.cacheManager = CacheManager.getInstance();
@@ -33,7 +28,7 @@ export class AssetService {
     }
 
     public async getAssets(forceRefresh = false): Promise<Map<string, Asset>> {
-        const cachedAssets = this.cacheManager.get(AssetService.CACHE_KEYS.MERGED_ASSETS);
+        const cachedAssets = this.cacheManager.get(CACHE_KEYS.MERGED_ASSETS);
         if (!forceRefresh && cachedAssets) {
             console.log('Returning cached assets');
             return cachedAssets;
@@ -239,8 +234,8 @@ export class AssetService {
         );
 
         //set cache for mergedAssets
-        this.cacheManager.set(AssetService.CACHE_KEYS.MERGED_ASSETS, mergedAssets);
-        this.cacheManager.set('token_graph', assetHubRouter.getTokenGraph());
+        this.cacheManager.set(CACHE_KEYS.MERGED_ASSETS, mergedAssets);
+        this.cacheManager.set(CACHE_KEYS.TOKEN_GRAPH, assetHubRouter.getTokenGraph());
         return mergedAssets;
     }
     

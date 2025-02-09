@@ -60,18 +60,12 @@ async function testAssetHubQuotes() {
                 console.log('\nRoute found:');
                 console.log('Path:', route.path.join(' -> '));
                 console.log('Expected Output:', route.expectedOutput.toString());
-                console.log('Total Price Impact:', (route.totalPriceImpact * 100).toFixed(2) + '%');
                 
                 console.log('\nHops:');
                 for (const hop of route.hops) {
                     console.log(`\nFrom ${hop.from} to ${hop.to}:`);
                     console.log('Amount In:', hop.amountIn.toString());
                     console.log('Amount Out:', hop.amountOut.toString());
-                    console.log('Price Impact:', (hop.priceImpact * 100).toFixed(2) + '%');
-                    console.log('Reserves:', [
-                        hop.reserves[0].toString(),
-                        hop.reserves[1].toString()
-                    ]);
                 }
             } else {
                 console.log('No route found!');
