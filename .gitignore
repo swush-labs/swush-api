@@ -10,5 +10,8 @@ services/assets/output/*.json*
 **/output/
 **/output/**
 
+dist/*
+dex-aggregator-service-*.tgz
+
 
 

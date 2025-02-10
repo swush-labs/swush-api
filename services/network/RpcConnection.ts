@@ -44,9 +44,8 @@ class PolkadotApiWrapper implements IApiWrapper {
       }
       return this.api;
     } catch (error) {
-      console.error(`Failed to connect to ${rpcUrl} using Polkadot API:`, error);
-      //TODO:error handling
-      throw new Error(`Connection failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Connection failed: ${errorMessage}`);
     }
   }
 
@@ -94,9 +93,8 @@ class PapiWrapper implements IApiWrapper {
         client: this.client 
       };
     } catch (error) {
-      console.error(`Failed to connect to ${rpcUrl} using PAPI:`, error);
-      //TODO:error handling
-      throw new Error(`Connection failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Connection failed: ${errorMessage}`);
     }
   }
 

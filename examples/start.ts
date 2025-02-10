@@ -1,5 +1,4 @@
 import RpcConnection from '../services/network/RpcConnection';
-import { fetchAllAssets } from '../services/pools/fetchPoolAssets';
 import { AH_RPC_URL } from '../services/constants';
 import { ApiPromise } from '@polkadot/api';
 //asset hub RPC URL
@@ -17,7 +16,6 @@ async function initializeDexAggregator() {
     console.log('Successfully connected to the blockchain node.');
 
     // Create instances of DataFetcher and CacheManager
-    await fetchAllAssets(api);
     await api.disconnect();
   } catch (error) {
     console.error('Error initializing DEX Aggregator Service:', error);

@@ -35,7 +35,7 @@ const sendCommand = (method: string, params: any) => {
         params: params,
     });
     ws.send(message);
-};
+}
 
 const setStorage = (key: string, value: string) => {
     sendCommand('state_setStorage', [key, value]);
@@ -43,7 +43,7 @@ const setStorage = (key: string, value: string) => {
 
 
 async function main() {
-    const { api, client } = await connectPapi(TEST_RPC);
+    const { api, client } = await connectPapi(TEST_RPC, 'asset-hub');
 
     // create the transaction sending Bob some assets
     const BOB = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
