@@ -1,2 +1,9 @@
 node_modules/*
 cursor_rules/*
+
+# Ignore all output directories in any subdirectory and all files in them
+**/*/output/
+**/*/output/**
+services/assets/output/**
+
+

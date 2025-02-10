@@ -1,13 +1,13 @@
 //main function to test the asset service
 
 import { AssetService } from './AssetService';
-import { CacheService } from '../cache/CacheService';
 import { initializeSDK } from '../../start';
 import fs from 'fs';
 import path from 'path';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
-import CacheManager from '@/cache/CacheManager';
+import CacheManager from '../cache/CacheManager';
+import { Asset } from './types';
 
 // await CacheService.getInstance().initializeAllCaches();
 // const assetService = AssetService.getInstance();
@@ -30,25 +30,56 @@ async function testAssetHubQuotes() {
         const cachedRouter = cacheManager.get('asset_hub_router');
         const router = cachedRouter || new AssetHubRouter(api, assets);
 
-        // Test some example routes
+        // Helper function to find asset by symbol
+        const findAssetBySymbol = (symbol: string): [string, Asset] | undefined => {
+            return Array.from(assets.entries()).find(([_, asset]) => 
+                asset.metadata.symbol.toLowerCase() === symbol.toLowerCase()
+            );
+        };
+
+        // Find actual assets for testing
+        //TODO: add DOT to the list of assets
+        const dotAsset = findAssetBySymbol('DOT');
+        const usdcAsset = findAssetBySymbol('USDC');
+        const wethAsset = findAssetBySymbol('MYTH');
+
+        if (!dotAsset || !usdcAsset || !wethAsset) {
+            //save into a file in current directory and serialize bigint as string  
+            // fs.writeFileSync(
+            //     path.join(__dirname, 'output', 'assetList.json'),
+            //     JSON.stringify(Array.from(assets.entries()), (key, value) => 
+            //         typeof value === 'bigint' ? value.toString() : value,
+            //     2)
+            // );
+            throw new Error('Could not find required test assets');
+        }
+
+
+        // Test cases using actual asset IDs
         const testCases = [
             {
-                from: '1', // DOT
-                to: '2',   // USDC
-                amount: BigInt(1e12) // 1 DOT
+                from: dotAsset[0],
+                to: usdcAsset[0],
+                fromSymbol: dotAsset[1].metadata.symbol,
+                toSymbol: usdcAsset[1].metadata.symbol,
+                amount: BigInt(1) * BigInt(10 ** dotAsset[1].metadata.decimals), // 1 DOT
+                decimals: dotAsset[1].metadata.decimals
             },
             {
-                from: '2', // USDC
-                to: '3',   // ETH
-                amount: BigInt(1e6)  // 1 USDC
-            },
-            // Add more test cases as needed
+                from: usdcAsset[0],
+                to: wethAsset[0],
+                fromSymbol: usdcAsset[1].metadata.symbol,
+                toSymbol: wethAsset[1].metadata.symbol,
+                amount: BigInt(1) * BigInt(10 ** usdcAsset[1].metadata.decimals), // 1 USDC
+                decimals: usdcAsset[1].metadata.decimals
+            }
         ];
 
         console.log('\n=== Testing Asset Hub Router Quotes ===\n');
 
         for (const test of testCases) {
-            console.log(`Finding route for ${test.amount} from Asset ${test.from} to Asset ${test.to}...`);
+            console.log(`Finding route for 1 ${test.fromSymbol} to ${test.toSymbol}...`);
+            console.log(`Amount In: ${test.amount} (${test.decimals} decimals)`);
             
             const route = await router.findBestRoute(
                 test.from,
@@ -58,14 +89,21 @@ async function testAssetHubQuotes() {
 
             if (route) {
                 console.log('\nRoute found:');
-                console.log('Path:', route.path.join(' -> '));
+                console.log('Path:', route.path.map(id => {
+                    const asset = assets.get(id);
+                    return asset ? asset.metadata.symbol : id;
+                }).join(' -> '));
+                
                 console.log('Expected Output:', route.expectedOutput.toString());
                 
                 console.log('\nHops:');
                 for (const hop of route.hops) {
-                    console.log(`\nFrom ${hop.from} to ${hop.to}:`);
-                    console.log('Amount In:', hop.amountIn.toString());
-                    console.log('Amount Out:', hop.amountOut.toString());
+                    const fromAsset = assets.get(hop.from);
+                    const toAsset = assets.get(hop.to);
+                    
+                    console.log(`\nFrom ${fromAsset?.metadata.symbol || hop.from} to ${toAsset?.metadata.symbol || hop.to}:`);
+                    console.log('Amount In:', formatAmount(hop.amountIn, fromAsset?.metadata.decimals));
+                    console.log('Amount Out:', formatAmount(hop.amountOut, toAsset?.metadata.decimals));
                 }
             } else {
                 console.log('No route found!');
@@ -76,6 +114,17 @@ async function testAssetHubQuotes() {
     } catch (error) {
         console.error('Error testing Asset Hub quotes:', error);
     }
+}
+
+// Helper function to format amounts with decimals
+function formatAmount(amount: bigint, decimals: number = 0): string {
+    const strAmount = amount.toString();
+    if (decimals === 0) return strAmount;
+    
+    const integerPart = strAmount.slice(0, -decimals) || '0';
+    const decimalPart = strAmount.slice(-decimals).padStart(decimals, '0');
+    
+    return `${integerPart}.${decimalPart}`;
 }
 
 // Main function to test the asset service

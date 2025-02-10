@@ -10,6 +10,38 @@ import { base, degen } from './external';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
 import { CACHE_KEYS } from '../constants';
+
+const NATIVE_DOT_ASSET: Asset = {
+    asset: {
+        owner: '0x0', // DOT doesn't have an owner
+        issuer: '0x0',
+        admin: '0x0',
+        freezer: '0x0',
+        supply: BigInt(0), // Will be updated from chain state if needed
+        deposit: BigInt(0),
+        min_balance: BigInt(1),
+        is_sufficient: true,
+        accounts: 0,
+        sufficients: 0,
+        approvals: 0,
+    },
+    metadata: {
+        deposit: BigInt(0),
+        name: "Polkadot",
+        symbol: "DOT",
+        decimals: 10, // DOT has 10 decimals
+        is_frozen: false
+    },
+    type: AssetType.Native,
+    xcmLocation: {
+        parents: 1,
+        interior: {
+            type: 'Here',
+            value: null
+        }
+    }
+};
+
 export class AssetService {
     private static instance: AssetService;
     private cacheManager: CacheManager;
@@ -95,6 +127,9 @@ export class AssetService {
         const nativeAssetsMap = new Map<string, Asset>();
         const foreignAssetsMap = new Map<string, Asset>();
 
+        // Add native DOT token first
+        nativeAssetsMap.set('DOT', NATIVE_DOT_ASSET);
+
         // Process native assets with string keys
         for (const nativeAsset of nativeAssets) {
             const assetId = nativeAsset.keyArgs[0].toString();
@@ -156,6 +191,14 @@ export class AssetService {
 
             for (const asset of assetsToProcess) {
                 const { parents, interior } = asset;
+                // Special case for native DOT
+                if (parents === 1 && interior?.type === 'Here') {
+                    assetHubPoolAssets.set('DOT', NATIVE_DOT_ASSET);
+                    if (!assetOneId) assetOneId = 'DOT';
+                    else assetTwoId = 'DOT';
+                    continue;
+                }
+
                 if (
                     parents === 0 &&
                     interior?.type === 'X2' &&
