@@ -1,11 +1,9 @@
-import { Binary, Enum, SS58String, TypedApi } from 'polkadot-api';
+import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { PoolService, TradeRouter } from '@galacticcouncil/sdk';
 import CacheManager from '../cache/CacheManager';
-import { Asset, AssetType, TokenPair, XcmV4Location } from './types';
+import { Asset, AssetType, XcmV4Location } from './types';
 import { getXcmV3Multilocation, serializeKey } from './utils';
-import fs from 'fs';
-import path from 'path';
 import { base, degen } from './external';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';

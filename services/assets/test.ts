@@ -8,7 +8,8 @@ import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
 import CacheManager from '../cache/CacheManager';
 import { Asset } from './types';
-
+import { saveAssetsToFile } from '@/utils';
+import { CACHE_KEYS } from '@/constants';
 // await CacheService.getInstance().initializeAllCaches();
 // const assetService = AssetService.getInstance();
 // await assetService.getAssets();
@@ -27,8 +28,8 @@ async function testAssetHubQuotes() {
         if (!api) throw new Error('Asset Hub API not initialized');
 
         // Get cached router or create new one
-        const cachedRouter = cacheManager.get('asset_hub_router');
-        const router = cachedRouter || new AssetHubRouter(api, assets);
+        const tokenGraph = cacheManager.get(CACHE_KEYS.TOKEN_GRAPH);
+        const router = AssetHubRouter.fromCachedGraph(api, assets, tokenGraph);
 
         // Helper function to find asset by symbol
         const findAssetBySymbol = (symbol: string): [string, Asset] | undefined => {
@@ -41,19 +42,12 @@ async function testAssetHubQuotes() {
         //TODO: add DOT to the list of assets
         const dotAsset = findAssetBySymbol('DOT');
         const usdcAsset = findAssetBySymbol('USDC');
-        const wethAsset = findAssetBySymbol('MYTH');
+        const mythAsset = findAssetBySymbol('MYTH');
 
-        if (!dotAsset || !usdcAsset || !wethAsset) {
-            //save into a file in current directory and serialize bigint as string  
-            // fs.writeFileSync(
-            //     path.join(__dirname, 'output', 'assetList.json'),
-            //     JSON.stringify(Array.from(assets.entries()), (key, value) => 
-            //         typeof value === 'bigint' ? value.toString() : value,
-            //     2)
-            // );
+        if (!dotAsset || !usdcAsset || !mythAsset) {
+            //saveAssetsToFile(assets, 'assetList.json');
             throw new Error('Could not find required test assets');
         }
-
 
         // Test cases using actual asset IDs
         const testCases = [
@@ -67,9 +61,9 @@ async function testAssetHubQuotes() {
             },
             {
                 from: usdcAsset[0],
-                to: wethAsset[0],
+                to: mythAsset[0],
                 fromSymbol: usdcAsset[1].metadata.symbol,
-                toSymbol: wethAsset[1].metadata.symbol,
+                toSymbol: mythAsset[1].metadata.symbol,
                 amount: BigInt(1) * BigInt(10 ** usdcAsset[1].metadata.decimals), // 1 USDC
                 decimals: usdcAsset[1].metadata.decimals
             }

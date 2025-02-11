@@ -32,6 +32,7 @@ export class AssetHubRouter {
         for (const [assetId, asset] of assetMap) {
             this.tokenGraph.addNode(assetId, asset);
         }
+        return this;
     }
 
     // Add method to expose graph
