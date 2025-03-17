@@ -116,42 +116,21 @@ async function main() {
             throw new Error(`Insufficient balance. Have ${dotBalance} DOT, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e10} DOT`)
         }
 
-        const sellTx = api.tx.Omnipool.sell({
-            asset_in: DOT_ASSET_ID,
-            asset_out: HDX_ASSET_ID, // Swap DOT for HDX
-            amount: TRANSFER_AMOUNT,
-            min_buy_amount: TRANSFER_AMOUNT * 95n / 100n // 5% slippage tolerance
-        })
-        
-        console.log("Submitting Omnipool sell transaction...")
-        await TransactionService.submitAndWatch(sellTx, alice, {
+        // Create XCM transfer from Hydration to Asset Hub
+        const xcmTx = transferParaToAssetHub(api, 1000, BOB, TRANSFER_AMOUNT)
+
+        console.log("Submitting XCM transfer transaction...")
+        await TransactionService.submitAndWatch(xcmTx.call, alice, {
             onSuccess: (status) => {
-                console.log(`Omnipool swap successful in block ${status.blockNumber}`);
+                console.log(`Transaction successful in block ${status.blockNumber}`);
             },
             onError: (error) => {
-                console.error('Omnipool swap failed:', error);
+                console.error('Transaction failed:', error);
             },
             onStatusChange: (status) => {
-                console.log('Omnipool swap status:', status);
+                console.log('Transaction status:', status);
             }
         });
-        
-
-        // // Create XCM transfer from Hydration to Asset Hub
-        // const xcmTx = transferParaToAssetHub(api, 1000, BOB, TRANSFER_AMOUNT)
-
-        // console.log("Submitting XCM transfer transaction...")
-        // await TransactionService.submitAndWatch(xcmTx.call, alice, {
-        //     onSuccess: (status) => {
-        //         console.log(`Transaction successful in block ${status.blockNumber}`);
-        //     },
-        //     onError: (error) => {
-        //         console.error('Transaction failed:', error);
-        //     },
-        //     onStatusChange: (status) => {
-        //         console.log('Transaction status:', status);
-        //     }
-        // });
 
         // Only runs if transaction succeeds
         wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }]);

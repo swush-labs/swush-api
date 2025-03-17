@@ -15,10 +15,10 @@ import { Binary } from 'polkadot-api';
 import { HydrationApi } from '../../../services/network/hydration-types';
 
 // Constants
-const SWAP_AMOUNT = 100_000_000_000n // 1 DOT in planck units
-const HDX_ASSET_ID = 10 // HDX token ID in Hydration
+const SWAP_AMOUNT = 10_000_000_000n // 0.1 DOT in planck units (reduced from 1 DOT)
+const HDX_ASSET_ID = 30 // HDX token ID in Hydration
 const DOT_ASSET_ID = 5 // DOT token ID in Hydration (adjust as needed)
-const SLIPPAGE_TOLERANCE = 5 // 5% slippage tolerance
+const SLIPPAGE_TOLERANCE = 10 // 10% slippage tolerance
 const minBuyAmount = SWAP_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
 /**
  * Example of using TradeRouter to find best sell route and execute the swap
@@ -81,33 +81,44 @@ async function main() {
 }
 
 async function getBestSellRoute(alice: any, api: HydrationApi) {
-    const pjsApi = await connectPolkadotjs(TEST_RPC_PARACHAIN_HYDRATION);
-    const poolService = new PoolService(pjsApi);
-    const tradeRouter = new TradeRouter(poolService);
+    // const pjsApi = await connectPolkadotjs(TEST_RPC_PARACHAIN_HYDRATION);
+    // const poolService = new PoolService(pjsApi);
+    // const tradeRouter = new TradeRouter(poolService);
     
-    // Get best sell route for DOT to HDX
-    console.log("Getting best sell route...")
-    const trade = await tradeRouter.getBestSell(
-        DOT_ASSET_ID.toString(),  // asset_in
-        HDX_ASSET_ID.toString(),  // asset_out
-        1000000000
+    // // Get best sell route for DOT to HDX
+    // console.log("Getting best sell route...")
+    // const trade = await tradeRouter.getBestSell(
+    //     DOT_ASSET_ID.toString(),  // asset_in
+    //     HDX_ASSET_ID.toString(),  // asset_out
+    //     1000000000
+    // );
+    // console.log("Best sell route:", trade.toHuman());
+
+    // Get route from storage
+    const routes = await getRouteStorage(api);
+    const route = routes.find(r => 
+        r.keyArgs[0].asset_in === DOT_ASSET_ID && 
+        r.keyArgs[0].asset_out === HDX_ASSET_ID
     );
-    console.log("Best sell route:", trade.toHuman());
-
-    // Build transaction with the trade data
-    const slippageTolerance = new BigNumber(1)
-    const txData = trade.toTx(slippageTolerance)
-    console.log("Transaction data:", txData);
-
-    // Create and submit transaction using the hex data
-    console.log("Creating transaction from hex data...")
-
-    // Strip the '0x' prefix if present and create call data
-    const hexData = txData.hex.startsWith('0x') ? txData.hex.slice(2) : txData.hex;
-    const callData = Binary.fromHex(hexData);
     
-    // Create transaction from call data
-    const tx = await api.txFromCallData(callData);
+    if (!route) {
+        throw new Error(`No route found for ${DOT_ASSET_ID} -> ${HDX_ASSET_ID}`);
+    }
+    
+    console.log("Found route:", jsonStringify(route.value));
+
+    const txParams = {
+        asset_in: DOT_ASSET_ID,
+        asset_out: HDX_ASSET_ID,
+        amount_in: 10000000n,
+        min_amount_out: 9000000n,
+        route: route.value
+    };
+    
+    console.log("Transaction parameters:", jsonStringify(txParams));
+
+    // Create the sell transaction with route
+    const tx = api.tx.Router.sell(txParams);
     
     console.log("Submitting trade transaction...")
     await TransactionService.submitAndWatch(tx, alice, {
@@ -122,9 +133,18 @@ async function getBestSellRoute(alice: any, api: HydrationApi) {
         }
     });
 
-    // Cleanup polkadot.js API connection
-    await pjsApi.disconnect();
+    // // Cleanup polkadot.js API connection
+    // await pjsApi.disconnect();
 }
 
+async function getRouteStorage(api: HydrationApi) {
+    const routeStorage = await api.query.Router.Routes.getEntries();
+    console.log("All routes:", routeStorage);
+    return routeStorage;
+}
 
+//json stringify includes bigint
+function jsonStringify(obj: any) {
+    return JSON.stringify(obj, (key, value) => typeof value === 'bigint' ? value.toString() : value);
+}
 main().catch(console.error)
