@@ -14,7 +14,7 @@ import { connectPapi } from "../../../services/network/types";
 import { transferParaToAssetHub } from "../xcmApi";
 
 // Constants
-const TRANSFER_AMOUNT = 1_000_000_000n // 1 HDX (considering fees)
+const TRANSFER_AMOUNT = 1_000_000n // 1 HDX (considering fees)
 const HDX_ASSET_ID = 0 // HDX token ID in Hydration
 const BLOCK_PRODUCTION_COUNT = 2
 const TRANSACTION_WAIT_TIME = 5000 // 5 seconds
@@ -72,6 +72,7 @@ class WSManager {
     }
 }
 
+//FIX: used DOT instead of HDX
 async function main() {
     const wsManager = new WSManager()
     const RPC = TEST_RPC_PARACHAIN_HYDRATION

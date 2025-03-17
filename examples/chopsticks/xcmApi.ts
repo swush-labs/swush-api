@@ -56,7 +56,7 @@ export const transferParaToAssetHub = (
 			interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(paraId)), // Asset Hub paraID
 		}),
 		beneficiary: getBeneficiary(address),
-		assets: getNativeAsset(amount, 0), // DOT is from relay chain (parent: 1) or HDX is from parachain (parent: 0)
+		assets: getNativeAsset(amount, 1), // DOT is from relay chain (parent: 1) or HDX is from parachain (parent: 0)
 		fee_asset_item: 0,
 		weight_limit: XcmV3WeightLimit.Unlimited(),
 	}),
