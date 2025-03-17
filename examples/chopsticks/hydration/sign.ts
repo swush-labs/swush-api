@@ -14,10 +14,11 @@ import { connectPapi } from "../../../services/network/types";
 import { transferParaToAssetHub } from "../xcmApi";
 
 // Constants
-const TRANSFER_AMOUNT = 1_000_000n // 1 HDX (considering fees)
+const TRANSFER_AMOUNT = 100_000_000_000_000n // 1 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in Hydration
 const BLOCK_PRODUCTION_COUNT = 2
 const TRANSACTION_WAIT_TIME = 5000 // 5 seconds
+const DOT_ASSET_ID = 5
 
 // Initialize signers
 const initSigners = () => {
@@ -89,26 +90,26 @@ async function main() {
         console.log("Bob address (Asset Hub):", BOB)
 
         // Check HDX token balance with more detailed logging
-        const initialBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
-        const hdxBalance = Number(initialBalance.free) / 1e12
+        const initialBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
+        const dotBalance = Number(initialBalance.free) / 1e10
         
         console.log('Transfer details:')
-        console.log(`- Amount to transfer: ${Number(TRANSFER_AMOUNT) / 1e12} HDX (${TRANSFER_AMOUNT} planck)`)
-        console.log(`- Available balance: ${hdxBalance} HDX (${initialBalance.free} planck)`)
-        // console.log(`- Reserved balance: ${Number(initialBalance.reserved) / 1e12} HDX`)
-        // console.log(`- Frozen balance: ${Number(initialBalance.frozen) / 1e12} HDX`)
+        console.log(`- Amount to transfer: ${Number(TRANSFER_AMOUNT) / 1e10} DOT (${TRANSFER_AMOUNT} planck)`)
+        console.log(`- Available balance: ${dotBalance} DOT (${initialBalance.free} planck)`)
+        // console.log(`- Reserved balance: ${Number(initialBalance.reserved) / 1e10} HDX`)
+        // console.log(`- Frozen balance: ${Number(initialBalance.frozen) / 1e10} HDX`)
 
         // Query existential deposit if available
         try {
             const existentialDeposit = 1000000000000
-            console.log(`Existential deposit: ${Number(existentialDeposit) / 1e12} HDX`)
+            console.log(`Existential deposit: ${Number(existentialDeposit) / 1e10} DOT`)
         } catch (e) {
             console.log('No existential deposit found')
         }
 
         // Check if we have enough balance
         if (initialBalance.free < TRANSFER_AMOUNT) {
-            throw new Error(`Insufficient balance. Have ${hdxBalance} HDX, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e12} HDX`)
+            throw new Error(`Insufficient balance. Have ${dotBalance} DOT, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e10} DOT`)
         }
 
         // Create XCM transfer from Hydration to Asset Hub
@@ -132,9 +133,9 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, TRANSACTION_WAIT_TIME));
 
         // Check final HDX balance
-        const finalBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
-        console.log(`Final HDX balance of Alice: ${finalBalance.free} planck (${Number(finalBalance.free) / 1e12} HDX)`)
-        console.log(`Amount deducted: ${Number(initialBalance.free - finalBalance.free) / 1e12} HDX`)
+        const finalBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
+        console.log(`Final DOT balance of Alice: ${finalBalance.free} planck (${Number(finalBalance.free) / 1e10} DOT)`)
+        console.log(`Amount deducted: ${Number(initialBalance.free - finalBalance.free) / 1e10} DOT`)
 
     } catch (error) {
         console.error('Transaction error:', error);
