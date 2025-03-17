@@ -12,12 +12,13 @@ import WebSocket from 'ws';
 import { TransactionService } from '../../../services/network/TransactionService';
 import { connectPapi } from "../../../services/network/types";
 import { transferParaToAssetHub } from "../xcmApi";
+import { TypedApi } from "polkadot-api";
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 1 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in Hydration
 const BLOCK_PRODUCTION_COUNT = 2
-const TRANSACTION_WAIT_TIME = 5000 // 5 seconds
+const TRANSACTION_WAIT_TIME = 8000 // 5 seconds
 const DOT_ASSET_ID = 5
 
 // Initialize signers
@@ -92,10 +93,13 @@ async function main() {
         // Check HDX token balance with more detailed logging
         const initialBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
         const dotBalance = Number(initialBalance.free) / 1e10
+        const initialHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
+        const hdxBalance = Number(initialHdxBalance.free) / 1e12
         
         console.log('Transfer details:')
         console.log(`- Amount to transfer: ${Number(TRANSFER_AMOUNT) / 1e10} DOT (${TRANSFER_AMOUNT} planck)`)
         console.log(`- Available balance: ${dotBalance} DOT (${initialBalance.free} planck)`)
+        console.log(`- Available balance: ${hdxBalance} HDX (${initialHdxBalance.free} planck)`)
         // console.log(`- Reserved balance: ${Number(initialBalance.reserved) / 1e10} HDX`)
         // console.log(`- Frozen balance: ${Number(initialBalance.frozen) / 1e10} HDX`)
 
@@ -112,21 +116,42 @@ async function main() {
             throw new Error(`Insufficient balance. Have ${dotBalance} DOT, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e10} DOT`)
         }
 
-        // Create XCM transfer from Hydration to Asset Hub
-        const xcmTx = transferParaToAssetHub(api, 1000, BOB, TRANSFER_AMOUNT)
-
-        console.log("Submitting XCM transfer transaction...")
-        await TransactionService.submitAndWatch(xcmTx.call, alice, {
+        const sellTx = api.tx.Omnipool.sell({
+            asset_in: DOT_ASSET_ID,
+            asset_out: HDX_ASSET_ID, // Swap DOT for HDX
+            amount: TRANSFER_AMOUNT,
+            min_buy_amount: TRANSFER_AMOUNT * 95n / 100n // 5% slippage tolerance
+        })
+        
+        console.log("Submitting Omnipool sell transaction...")
+        await TransactionService.submitAndWatch(sellTx, alice, {
             onSuccess: (status) => {
-                console.log(`Transaction successful in block ${status.blockNumber}`);
+                console.log(`Omnipool swap successful in block ${status.blockNumber}`);
             },
             onError: (error) => {
-                console.error('Transaction failed:', error);
+                console.error('Omnipool swap failed:', error);
             },
             onStatusChange: (status) => {
-                console.log('Transaction status:', status);
+                console.log('Omnipool swap status:', status);
             }
         });
+        
+
+        // // Create XCM transfer from Hydration to Asset Hub
+        // const xcmTx = transferParaToAssetHub(api, 1000, BOB, TRANSFER_AMOUNT)
+
+        // console.log("Submitting XCM transfer transaction...")
+        // await TransactionService.submitAndWatch(xcmTx.call, alice, {
+        //     onSuccess: (status) => {
+        //         console.log(`Transaction successful in block ${status.blockNumber}`);
+        //     },
+        //     onError: (error) => {
+        //         console.error('Transaction failed:', error);
+        //     },
+        //     onStatusChange: (status) => {
+        //         console.log('Transaction status:', status);
+        //     }
+        // });
 
         // Only runs if transaction succeeds
         wsManager.sendCommand('dev_newBlock', [{ count: BLOCK_PRODUCTION_COUNT }]);
@@ -136,6 +161,11 @@ async function main() {
         const finalBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
         console.log(`Final DOT balance of Alice: ${finalBalance.free} planck (${Number(finalBalance.free) / 1e10} DOT)`)
         console.log(`Amount deducted: ${Number(initialBalance.free - finalBalance.free) / 1e10} DOT`)
+
+        const finalHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
+        console.log(`- Final HDX balance: ${Number(finalHdxBalance.free) / 1e12} HDX (${finalHdxBalance.free} planck)`)
+        console.log(`- HDX received: ${Number(finalHdxBalance.free - initialHdxBalance.free) / 1e12} HDX`)
+
 
     } catch (error) {
         console.error('Transaction error:', error);
