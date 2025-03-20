@@ -16,8 +16,8 @@ import { HydrationApi } from '../../../services/network/hydration-types';
 
 // Constants
 const SWAP_AMOUNT = 10_000_000_000n // 0.1 DOT in planck units (reduced from 1 DOT)
-const HDX_ASSET_ID = 30 // HDX token ID in Hydration
-const DOT_ASSET_ID = 5 // DOT token ID in Hydration (adjust as needed)
+const AMOUNT_OUT = 30 // HDX token ID in Hydration
+const AMOUNT_IN = 5 // DOT token ID in Hydration (adjust as needed)
 const SLIPPAGE_TOLERANCE = 10 // 10% slippage tolerance
 const minBuyAmount = SWAP_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
 /**
@@ -42,7 +42,7 @@ async function main() {
         console.log("Alice address:", ALICE)
 
         // Check DOT balance
-        const initialDotBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
+        const initialDotBalance = await api.query.Tokens.Accounts.getValue(ALICE, AMOUNT_IN)
         const dotBalance = Number(initialDotBalance.free) / 1e10
         
         console.log('Swap details:')
@@ -50,7 +50,7 @@ async function main() {
         console.log(`- Available DOT balance: ${dotBalance} DOT (${initialDotBalance.free} planck)`)
 
         // Check HDX balance before swap
-        const initialHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
+        const initialHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, AMOUNT_OUT)
         console.log(`- Initial HDX balance: ${Number(initialHdxBalance.free) / 1e12} HDX (${initialHdxBalance.free} planck)`)
 
         // Check if we have enough balance
@@ -64,8 +64,8 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         // Check final balances
-        const finalDotBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
-        const finalHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
+        const finalDotBalance = await api.query.Tokens.Accounts.getValue(ALICE, AMOUNT_IN)
+        const finalHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, AMOUNT_OUT)
         
         console.log('Swap results:')
         console.log(`- Final DOT balance: ${Number(finalDotBalance.free) / 1e10} DOT (${finalDotBalance.free} planck)`)
@@ -95,24 +95,24 @@ async function getBestSellRoute(alice: any, api: HydrationApi) {
     // console.log("Best sell route:", trade.toHuman());
 
     // Get route from storage
-    const routes = await getRouteStorage(api);
-    const route = routes.find(r => 
-        r.keyArgs[0].asset_in === DOT_ASSET_ID && 
-        r.keyArgs[0].asset_out === HDX_ASSET_ID
-    );
+    // const routes = await getRouteStorage(api);
+    // const route = routes.find(r => 
+    //     r.keyArgs[0].asset_in === DOT_ASSET_ID && 
+    //     r.keyArgs[0].asset_out === HDX_ASSET_ID
+    // );
     
-    if (!route) {
-        throw new Error(`No route found for ${DOT_ASSET_ID} -> ${HDX_ASSET_ID}`);
-    }
+    // if (!route) {
+    //     throw new Error(`No route found for ${DOT_ASSET_ID} -> ${HDX_ASSET_ID}`);
+    // }
     
-    console.log("Found route:", jsonStringify(route.value));
+    // console.log("Found route:", jsonStringify(route.value));
 
     const txParams = {
-        asset_in: DOT_ASSET_ID,
-        asset_out: HDX_ASSET_ID,
-        amount_in: 10000000n,
-        min_amount_out: 9000000n,
-        route: route.value
+        asset_in: 5,
+        asset_out: 0,
+        amount_in: 10000000000n,
+        min_amount_out: 9000000000n,
+        route: []
     };
     
     console.log("Transaction parameters:", jsonStringify(txParams));
