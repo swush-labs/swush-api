@@ -4,6 +4,7 @@ import { XcmV3Junction } from '@polkadot-api/descriptors';
 import { XcmVersionedLocation } from '@polkadot-api/descriptors';
 import { AccountId, Binary, SS58String } from 'polkadot-api';
 import { XcmV4Location } from '../assets/pools';
+import { Enum } from "polkadot-api";
 
 type AssetInfo = {
 	assetType: 'relay' | 'native' | 'foreign'
@@ -20,6 +21,17 @@ export function getXcmV3Multilocation(parents: number, parachain: number, pallet
 			XcmV3Junction.GeneralIndex(BigInt(assetId))
         ]),
     };
+}
+
+// get XcmV3Multilocation for native asset
+export function getXcmV3MultilocationForNativeAsset(parents: number, palletInstance: number, assetId: bigint | number): XcmV4Location {
+	return {
+		parents: parents,
+		interior: XcmV3Junctions.X2([
+			XcmV3Junction.PalletInstance(palletInstance),
+			XcmV3Junction.GeneralIndex(BigInt(assetId))
+		])
+	};
 }
 
 // Asset Hub (1000) to other parachain
@@ -61,6 +73,92 @@ export const transferParaToAssetHub = (
 		weight_limit: XcmV3WeightLimit.Unlimited(),
 	}),
 });
+
+// Transfer assets from Asset Hub to HydraDX and execute an Omnipool swap
+export const transferAndSwapOnHydraDX = (
+	assetHubApi: any,
+	hydraDxApi: any,
+	assetId: number | bigint,
+	amount: bigint,
+	hydradxParaId: number,
+	beneficiary: SS58String,
+	assetToSwapInto: number | bigint,
+	minAmountOut: bigint
+) => {
+	// Create the assets array with a single asset
+	const assets = {
+		V3: [{
+			id: XcmV3MultiassetAssetId.Concrete({
+				parents: 0,
+				interior: XcmV3Junctions.X1(XcmV3Junction.GeneralIndex(assetId))
+			}),
+			fun: XcmV3MultiassetFungibility.Fungible(amount)
+		}]
+	};
+
+	// Define the destination (HydraDX parachain)
+	const destination = XcmVersionedLocation.V3({
+		parents: 1,
+		interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(hydradxParaId))
+	});
+
+	// Create the remote fees asset ID (using the same asset for fees)
+	const remoteFeesId = {
+		V3: {
+			Concrete: {
+				parents: 0,
+				interior: XcmV3Junctions.X1(XcmV3Junction.GeneralIndex(assetId))
+			}
+		}
+	};
+
+	// Get the encoded Omnipool.sell call
+	const encodedOmnipoolSell = hydraDxApi.tx.Omnipool.sell({
+		asset_in: assetId,
+		asset_out: assetToSwapInto,
+		amount: amount,
+		min_buy_amount: minAmountOut
+	}).method.toHex();
+
+	// Create the custom XCM to execute on HydraDX
+	const customXcm = {
+		V3: [
+			// First deposit the assets to the account
+			{
+				DepositAsset: {
+					assets: { Wild: { AllCounted: 1 } },
+					beneficiary: getBeneficiary(beneficiary)
+				}
+			},
+			// Then execute the Omnipool swap call
+			{
+				Transact: {
+					originKind: 'SovereignAccount',
+					requireWeightAtMost: {
+						refTime: 10000000000n,
+						proofSize: 65536n
+					},
+					call: {
+						encoded: encodedOmnipoolSell
+					}
+				}
+			}
+		]
+	};
+
+	return {
+		type: "asset_hub_to_hydradx_with_swap" as const,
+		call: assetHubApi.tx.PolkadotXcm.transfer_assets_using_type_and_then({
+			assets: assets,
+			assets_transfer_type: Enum("RemoteReserve", destination),
+			custom_xcm_on_dest: customXcm,
+			dest: destination,
+			fees_transfer_type: Enum("RemoteReserve", destination),
+			remote_fees_id: remoteFeesId,
+			weight_limit: XcmV3WeightLimit.Unlimited()
+		})
+	};
+};
 
 const getBeneficiary = (address: SS58String) =>
 	XcmVersionedLocation.V3({

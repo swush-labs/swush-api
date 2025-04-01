@@ -1,38 +1,35 @@
-import { sr25519CreateDerive } from "@polkadot-labs/hdkd"
-import {
-  DEV_PHRASE,
-  entropyToMiniSecret,
-  mnemonicToEntropy,
-  ss58Encode
-} from "@polkadot-labs/hdkd-helpers"
-import { getPolkadotSigner } from "polkadot-api/signer"
 import { TEST_RPC_PARACHAIN_HYDRATION } from "../../../services/constants"
 import { TransactionService } from '../../../services/network/TransactionService';
 import { connectPapi } from "../../../services/network/types";
 import { BigNumber, PoolService, TradeRouter } from '@galacticcouncil/sdk';
 import { connectPolkadotjs } from '../../../services/network/types';
 import { Binary } from 'polkadot-api';
+import { 
+    WSManager, 
+    initSigners, 
+    produceBlocksAndWait,
+    checkBalances,
+    formatBalanceChanges,
+    DOT_ASSET_ID,
+    HDX_ASSET_ID
+} from '../../../services/network/hydration/utils';
+import { ss58Encode } from "@polkadot-labs/hdkd-helpers";
 import { HydrationApi } from '../../../services/network/hydration-types';
 
 // Constants
-const SWAP_AMOUNT = 100_000_000_000n // 1 DOT in planck units
-const HDX_ASSET_ID = 10 // HDX token ID in Hydration
-const DOT_ASSET_ID = 5 // DOT token ID in Hydration (adjust as needed)
-const SLIPPAGE_TOLERANCE = 5 // 5% slippage tolerance
+const SWAP_AMOUNT = 10_000_000_000n // 0.1 DOT in planck units
+const SLIPPAGE_TOLERANCE = 10 // 10% slippage tolerance
 const minBuyAmount = SWAP_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
+
 /**
  * Example of using TradeRouter to find best sell route and execute the swap
  */
 async function main() {
-    // Initialize signer
-    const miniSecret = entropyToMiniSecret(mnemonicToEntropy(DEV_PHRASE))
-    const derive = sr25519CreateDerive(miniSecret)
-    const aliceKeyPair = derive("//Alice")
-    const alice = getPolkadotSigner(
-        aliceKeyPair.publicKey,
-        "Sr25519",
-        aliceKeyPair.sign,
-    )
+    // Initialize WebSocket manager and signers
+    const wsManager = new WSManager();
+    wsManager.connect(TEST_RPC_PARACHAIN_HYDRATION, 'Hydration');
+    
+    const { alice, aliceKeyPair } = initSigners();
 
     // Connect to Hydration
     const { api, client } = await connectPapi(TEST_RPC_PARACHAIN_HYDRATION, 'hydration')
@@ -41,46 +38,41 @@ async function main() {
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 63) // Hydration SS58 format
         console.log("Alice address:", ALICE)
 
-        // Check DOT balance
-        const initialDotBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
-        const dotBalance = Number(initialDotBalance.free) / 1e10
+        // Check initial balances
+        const initialBalances = await checkBalances(api, ALICE);
         
         console.log('Swap details:')
         console.log(`- Amount to swap: ${Number(SWAP_AMOUNT) / 1e10} DOT (${SWAP_AMOUNT} planck)`)
-        console.log(`- Available DOT balance: ${dotBalance} DOT (${initialDotBalance.free} planck)`)
-
-        // Check HDX balance before swap
-        const initialHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
-        console.log(`- Initial HDX balance: ${Number(initialHdxBalance.free) / 1e12} HDX (${initialHdxBalance.free} planck)`)
+        console.log(`- Available DOT balance: ${initialBalances.dot.freeFormatted} DOT (${initialBalances.dot.free} planck)`)
+        console.log(`- Initial HDX balance: ${initialBalances.hdx.freeFormatted} HDX (${initialBalances.hdx.free} planck)`)
 
         // Check if we have enough balance
-        if (initialDotBalance.free < SWAP_AMOUNT) {
-            throw new Error(`Insufficient balance. Have ${dotBalance} DOT, trying to swap ${Number(SWAP_AMOUNT) / 1e10} DOT`)
+        if (initialBalances.dot.free < SWAP_AMOUNT) {
+            throw new Error(`Insufficient balance. Have ${initialBalances.dot.freeFormatted} DOT, trying to swap ${Number(SWAP_AMOUNT) / 1e10} DOT`)
         }
 
-        await getBestSellRoute(alice, api);
-
-        // Wait a bit for the transaction to be processed
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await getBestSellRoute(alice, api, wsManager);
 
         // Check final balances
-        const finalDotBalance = await api.query.Tokens.Accounts.getValue(ALICE, DOT_ASSET_ID)
-        const finalHdxBalance = await api.query.Tokens.Accounts.getValue(ALICE, HDX_ASSET_ID)
+        const finalBalances = await checkBalances(api, ALICE);
+        const dotChanges = formatBalanceChanges(initialBalances.dot.free, finalBalances.dot.free, 10);
+        const hdxChanges = formatBalanceChanges(initialBalances.hdx.free, finalBalances.hdx.free, 12);
         
         console.log('Swap results:')
-        console.log(`- Final DOT balance: ${Number(finalDotBalance.free) / 1e10} DOT (${finalDotBalance.free} planck)`)
-        console.log(`- DOT spent: ${Number(initialDotBalance.free - finalDotBalance.free) / 1e10} DOT`)
-        console.log(`- Final HDX balance: ${Number(finalHdxBalance.free) / 1e12} HDX (${finalHdxBalance.free} planck)`)
-        console.log(`- HDX received: ${Number(finalHdxBalance.free - initialHdxBalance.free) / 1e12} HDX`)
+        console.log(`- Final DOT balance: ${finalBalances.dot.freeFormatted} DOT`)
+        console.log(`- DOT spent: ${dotChanges.change} DOT`)
+        console.log(`- Final HDX balance: ${finalBalances.hdx.freeFormatted} HDX`)
+        console.log(`- HDX received: ${hdxChanges.change} HDX`)
 
     } catch (error) {
         console.error('Transaction error:', error);
     } finally {
-        client.destroy()
+        client.destroy();
+        wsManager.close();
     }
 }
 
-async function getBestSellRoute(alice: any, api: HydrationApi) {
+async function getBestSellRoute(alice: any, api: HydrationApi, wsManager: WSManager) {
     const pjsApi = await connectPolkadotjs(TEST_RPC_PARACHAIN_HYDRATION);
     const poolService = new PoolService(pjsApi);
     const tradeRouter = new TradeRouter(poolService);
@@ -90,29 +82,41 @@ async function getBestSellRoute(alice: any, api: HydrationApi) {
     const trade = await tradeRouter.getBestSell(
         DOT_ASSET_ID.toString(),  // asset_in
         HDX_ASSET_ID.toString(),  // asset_out
-        1000000000
+        Number(SWAP_AMOUNT)  // Convert bigint to number for SDK
     );
     console.log("Best sell route:", trade.toHuman());
 
-    // Build transaction with the trade data
-    const slippageTolerance = new BigNumber(1)
-    const txData = trade.toTx(slippageTolerance)
-    console.log("Transaction data:", txData);
-
-    // Create and submit transaction using the hex data
-    console.log("Creating transaction from hex data...")
-
-    // Strip the '0x' prefix if present and create call data
-    const hexData = txData.hex.startsWith('0x') ? txData.hex.slice(2) : txData.hex;
-    const callData = Binary.fromHex(hexData);
+    // Get route from storage
+    const routes = await api.query.Router.Routes.getEntries();
+    const route = routes.find(r => 
+        r.keyArgs[0].asset_in === DOT_ASSET_ID && 
+        r.keyArgs[0].asset_out === HDX_ASSET_ID
+    );
     
-    // Create transaction from call data
-    const tx = await api.txFromCallData(callData);
+    if (!route) {
+        throw new Error(`No route found for ${DOT_ASSET_ID} -> ${HDX_ASSET_ID}`);
+    }
+    
+    console.log("Found route:", JSON.stringify(route.value, null, 2));
+
+    const txParams = {
+        asset_in: DOT_ASSET_ID,
+        asset_out: HDX_ASSET_ID,
+        amount_in: SWAP_AMOUNT,
+        min_amount_out: minBuyAmount,
+        route: route.value
+    };
+    
+    console.log("Transaction parameters:", JSON.stringify(txParams, null, 2));
+
+    // Create the sell transaction with route
+    const tx = api.tx.Router.sell(txParams);
     
     console.log("Submitting trade transaction...")
     await TransactionService.submitAndWatch(tx, alice, {
-        onSuccess: (status) => {
+        onSuccess: async (status) => {
             console.log(`Trade successful in block ${status.blockNumber}`);
+            await produceBlocksAndWait(wsManager);
         },
         onError: (error) => {
             console.error('Trade failed:', error);
@@ -125,6 +129,5 @@ async function getBestSellRoute(alice: any, api: HydrationApi) {
     // Cleanup polkadot.js API connection
     await pjsApi.disconnect();
 }
-
 
 main().catch(console.error)

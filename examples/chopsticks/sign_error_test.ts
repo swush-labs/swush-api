@@ -10,13 +10,15 @@ import { getPolkadotSigner } from "polkadot-api/signer"
 import { TEST_RPC_ASSET_HUB } from "../../services/constants"
 import { connectPapi } from "../../services/network/types"
 import WebSocket from 'ws';
-import { transferFromAssetHubToPara } from "./xcmApi"
+import { getXcmV3Multilocation, getXcmV3MultilocationForNativeAsset } from "./xcmApi"
 import { TransactionService } from '../../services/network/TransactionService';
+import { MultiAddress } from '@polkadot-api/descriptors';
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000n // 0.1 DOT in planck units
 const BLOCK_PRODUCTION_COUNT = 2
 const TRANSACTION_WAIT_TIME = 5000 // 5 seconds
+const SLIPPAGE_TOLERANCE = 10 // 10% slippage tolerance
 
 // Initialize signers
 const initSigners = () => {
@@ -81,18 +83,39 @@ async function main() {
 
     try {
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0)
-        const BOB = ss58Encode(bobKeyPair.publicKey, 63)
-
+        const BOB = ss58Encode(bobKeyPair.publicKey, 0)
         console.log("Alice address:", ALICE)
         console.log("Bob address:", BOB)
 
         const initialBalance = await api.query.System.Account.getValue(ALICE)
         console.log(`Initial balance of Alice: ${initialBalance.data.free} planck (${Number(initialBalance.data.free) / 1e10} DOT)`)
 
-        const xcmTx = transferFromAssetHubToPara(api, 2034, BOB, TRANSFER_AMOUNT)
+        // Get locations for the assets
+        const fromXcmLocation = getXcmV3MultilocationForNativeAsset(0, 1000, 5)
+        const toXcmLocation = getXcmV3MultilocationForNativeAsset(0, 1000, 10)
 
-        console.log("Submitting XCM transfer transaction...")
-        await TransactionService.submitAndWatch(xcmTx.call, alice, {
+        // First get a quote to see expected output
+        const quote = await api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
+            fromXcmLocation,
+            toXcmLocation,
+            TRANSFER_AMOUNT,
+            true
+        );
+
+        // Calculate minimum amount out with slippage tolerance
+        const minAmountOut = quote ? (quote * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n) : 0n;
+
+        // Create the actual swap transaction
+        const tx = api.tx.AssetConversion.swap_exact_tokens_for_tokens({
+            path: [fromXcmLocation, toXcmLocation],
+            amount_in: TRANSFER_AMOUNT,
+            amount_out_min: minAmountOut,
+            send_to: BOB,
+            keep_alive: true
+        });
+
+        console.log("Submitting swap transaction...")
+        await TransactionService.submitAndWatch(tx, alice, {
             onSuccess: (status) => {
                 console.log(`Transaction successful in block ${status.blockNumber}`);
             },

@@ -1,4 +1,5 @@
 import { TxEvent, InvalidTxError, TransactionValidityError } from 'polkadot-api';
+import { Polkadot_asset_hubDispatchError } from '@polkadot-api/descriptors';
 
 export interface TransactionStatus {
     type: string;
@@ -33,37 +34,43 @@ export class TransactionService {
                         console.log(`Transaction signed with hash:`, event.txHash);
                     }
 
-                    if (event.type === 'txBestBlocksState' && event.found) {
+                    if ((event.type === 'txBestBlocksState' && event.found) || event.type === 'finalized') {
                         status.blockNumber = event.block.number;
                         status.blockHash = event.block.hash;
                         status.success = event.ok;
 
                         if (!event.ok && event.dispatchError) {
-                            status.error = event.dispatchError;
-                            // Properly format dispatch error
-                            const errorMessage = this.formatDispatchError(event.dispatchError);
-                            console.error(`Transaction failed in block:`, {
-                                error: errorMessage,
-                                block: event.block.number
-                            });
+                            const err = event.dispatchError as Polkadot_asset_hubDispatchError;
+                            status.error = err;
+                            
+                            // Enhanced error handling as per PAPI docs
+                            if (err.type === 'Module') {
+                                console.error('Module Error:', {
+                                    module: err.value.type,
+                                    error: err.value,
+                                    block: event.block.number
+                                });
+                            } else {
+                                console.error('Other Error:', {
+                                    type: err.type,
+                                    error: err,
+                                    block: event.block.number
+                                });
+                            }
                         }
-                    }
 
-                    if (event.type === 'finalized') {
-                        status.blockNumber = event.block.number;
-                        status.blockHash = event.block.hash;
-                        status.success = event.ok;
-
-                        if (event.ok) {
-                            callbacks?.onSuccess?.(status);
-                            resolve();
-                        } else {
-                            const error = event.dispatchError 
-                                ? this.formatDispatchError(event.dispatchError)
-                                : 'Transaction failed without dispatch error';
-                            const txError = new Error(`Transaction failed: ${error}`);
-                            callbacks?.onError?.(txError);
-                            reject(txError);
+                        if (event.type === 'finalized') {
+                            if (event.ok) {
+                                callbacks?.onSuccess?.(status);
+                                resolve();
+                            } else {
+                                const error = event.dispatchError 
+                                    ? this.formatDispatchError(event.dispatchError as Polkadot_asset_hubDispatchError)
+                                    : 'Transaction failed without dispatch error';
+                                const txError = new Error(`Transaction failed: ${error}`);
+                                callbacks?.onError?.(txError);
+                                reject(txError);
+                            }
                         }
                     }
 
@@ -91,15 +98,12 @@ export class TransactionService {
         });
     }
 
-    private static formatDispatchError(dispatchError: any): string {
+    private static formatDispatchError(dispatchError: Polkadot_asset_hubDispatchError): string {
         try {
-            if (typeof dispatchError === 'object') {
-                if (dispatchError.type === 'Module') {
-                    return `Module Error: ${JSON.stringify(dispatchError.value)}`;
-                }
-                return JSON.stringify(dispatchError);
+            if (dispatchError.type === 'Module') {
+                return `Module Error: ${JSON.stringify(dispatchError.value)}`;
             }
-            return String(dispatchError);
+            return JSON.stringify(dispatchError);
         } catch (e) {
             return 'Unknown dispatch error format';
         }
@@ -112,4 +116,5 @@ export class TransactionService {
             return 'Unknown validity error format';
         }
     }
+    
 } 

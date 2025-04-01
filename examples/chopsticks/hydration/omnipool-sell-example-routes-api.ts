@@ -109,7 +109,7 @@ async function getBestSellRoute(alice: any, api: HydrationApi) {
 
     const txParams = {
         asset_in: 5,
-        asset_out: 0,
+        asset_out: 10,
         amount_in: 10000000000n,
         min_amount_out: 9000000000n,
         route: []
