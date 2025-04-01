@@ -1,21 +1,35 @@
 import { sr25519CreateDerive } from "@polkadot-labs/hdkd"
 import {
-  DEV_PHRASE,
-  entropyToMiniSecret,
-  mnemonicToEntropy,
-  ss58Decode,
-  ss58Encode
+    DEV_PHRASE,
+    entropyToMiniSecret,
+    mnemonicToEntropy,
+    ss58Decode,
+    ss58Encode
 } from "@polkadot-labs/hdkd-helpers"
 import { getPolkadotSigner } from "polkadot-api/signer"
 import { TEST_RPC_ASSET_HUB, TEST_RPC_PARACHAIN_HYDRATION } from "../../../services/constants"
 import { TransactionService } from '../../../services/network/TransactionService';
 import { connectPapi } from "../../../services/network/types";
 import { Enum } from "polkadot-api";
+import {
+    XcmVersionedLocation,
+    XcmVersionedAssets,
+    XcmVersionedAssetId,
+    XcmV3WeightLimit,
+    XcmV3Junction,
+    XcmV3Junctions,
+    XcmV3MultiassetAssetId,
+    XcmV3MultiassetFungibility,
+    XcmVersionedXcm,
+    XcmV3Instruction,
+    XcmV2OriginKind
+} from "@polkadot-api/descriptors";
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 1 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in HydraDX
 const DOT_ASSET_ID = 1 // DOT token ID in HydraDX (example, adjust as needed)
+const TO_SWAP_ASSET_ID = 1000 // Asset ID of the asset to swap into
 const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
 const SLIPPAGE_TOLERANCE = 5 // 5% slippage tolerance
 
@@ -23,10 +37,10 @@ const SLIPPAGE_TOLERANCE = 5 // 5% slippage tolerance
 const initSigners = () => {
     const miniSecret = entropyToMiniSecret(mnemonicToEntropy(DEV_PHRASE))
     const derive = sr25519CreateDerive(miniSecret)
-    
+
     const aliceKeyPair = derive("//Alice")
     const bobKeyPair = derive("//Bob")
-    
+
     const alice = getPolkadotSigner(
         aliceKeyPair.publicKey,
         "Sr25519",
@@ -46,10 +60,10 @@ const initSigners = () => {
  */
 async function main() {
     const { alice, aliceKeyPair, bobKeyPair } = initSigners()
-    
+
     // Connect to Asset Hub
     const { api: assetHubApi, client: assetHubClient } = await connectPapi(TEST_RPC_ASSET_HUB, 'asset-hub')
-    
+
     // Connect to HydraDX
     const { api: hydraDxApi, client: hydraDxClient } = await connectPapi(TEST_RPC_PARACHAIN_HYDRATION, 'hydration')
 
@@ -63,7 +77,7 @@ async function main() {
         // Check DOT balance on Asset Hub
         const initialBalance = await assetHubApi.query.System.Account.getValue(ALICE)
         const dotBalance = Number(initialBalance.data.free) / 1e10
-        
+
         console.log('Transfer details:')
         console.log(`- Amount to transfer: ${Number(TRANSFER_AMOUNT) / 1e10} DOT (${TRANSFER_AMOUNT} planck)`)
         console.log(`- Available balance: ${dotBalance} DOT (${initialBalance.data.free} planck)`)
@@ -77,22 +91,64 @@ async function main() {
         const minBuyAmount = TRANSFER_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
 
         // Get the encoded Omnipool.sell call
-        const encodedOmnipoolSell = hydraDxApi.tx.Omnipool.sell({
+        const encodedOmnipoolSell = await hydraDxApi.tx.Omnipool.sell({
             asset_in: DOT_ASSET_ID,
             asset_out: HDX_ASSET_ID,
             amount: TRANSFER_AMOUNT,
             min_buy_amount: minBuyAmount
+        }).getEncodedData();
+
+        // Create the assets array with a single asset
+        const assets = XcmVersionedAssets.V3([{
+            id: XcmV3MultiassetAssetId.Concrete({
+                parents: 0,
+                interior: XcmV3Junctions.X1(
+                    XcmV3Junction.GeneralIndex(BigInt(TO_SWAP_ASSET_ID))
+                )
+            }),
+            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+        }]);
+
+        // Define the destination (HydraDX parachain)
+        const destination = XcmVersionedLocation.V3({
+            parents: 1,
+            interior: XcmV3Junctions.X1(
+                XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+            )
         });
+
+        // Create the remote fees asset ID (using the same asset for fees)
+        const remoteFeesId = XcmVersionedAssetId.V3(
+            XcmV3MultiassetAssetId.Concrete({
+                parents: 0,
+                interior: XcmV3Junctions.X1(
+                    XcmV3Junction.GeneralIndex(BigInt(TO_SWAP_ASSET_ID))
+                )
+            })
+        );
+
+        const customXcmOnDest = XcmVersionedXcm.V3(
+            [
+                XcmV3Instruction.Transact({
+                    origin_kind: XcmV2OriginKind.SovereignAccount(),
+                    require_weight_at_most: {
+                        ref_time: 10000000000n,
+                        proof_size: 65536n
+                    },
+                    call: encodedOmnipoolSell
+                })
+            ]
+        )
 
         // Create the transaction
         const tx = assetHubApi.tx.PolkadotXcm.transfer_assets_using_type_and_then({
-            assets: assets,
+            assets,
             assets_transfer_type: Enum("RemoteReserve", destination),
-            custom_xcm_on_dest: customXcm,
+            custom_xcm_on_dest: customXcmOnDest,
             dest: destination,
             fees_transfer_type: Enum("RemoteReserve", destination),
             remote_fees_id: remoteFeesId,
-            weight_limit: Enum("Unlimited", null)
+            weight_limit: XcmV3WeightLimit.Unlimited()
         });
 
         console.log("Submitting XCM transfer with Omnipool swap transaction...")
