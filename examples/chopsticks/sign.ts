@@ -71,6 +71,7 @@ class WSManager {
     }
 }
 
+const XCM_RPC = "ws://localhost:8000"
 async function main() {
     const wsManager = new WSManager()
     const RPC = TEST_RPC_ASSET_HUB

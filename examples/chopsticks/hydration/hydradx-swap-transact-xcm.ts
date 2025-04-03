@@ -91,41 +91,16 @@ async function main() {
         const minBuyAmount = TRANSFER_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
 
         // Get the encoded Omnipool.sell call
-        const omnipoolSell = await hydraDxApi.tx.Omnipool.sell({
+        const omnipoolSell = await hydraDxApi.tx.Router.sell({
             asset_in: DOT_ASSET_ID,
             asset_out: HDX_ASSET_ID,
-            amount: TRANSFER_AMOUNT,
-            min_buy_amount: minBuyAmount
-        });
+            amount_in: TRANSFER_AMOUNT,
+            min_amount_out: minBuyAmount,
+            route: []
+        })
 
         const encodedOmnipoolSellHex = await omnipoolSell.getEncodedData();
         const omnipool_weight = await omnipoolSell.getPaymentInfo(ALICE);
-
-        // Create the remote fees asset ID (using the same asset for fees)
-        const dotAssetId = XcmVersionedAssetId.V3(
-            XcmV3MultiassetAssetId.Concrete({
-                parents: 0, // 1 for relay chain DOT, 0 for local asset
-                interior: XcmV3Junctions.Here(),
-            })
-        );
-        // Create the assets array with a single asset
-        const assets = XcmVersionedAssets.V3([{
-            id: XcmV3MultiassetAssetId.Concrete({
-                parents: 0, // 1 for relay chain DOT, 0 for local asset
-                interior: XcmV3Junctions.Here(),
-            }),
-            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
-        }]);
-
-        // Define the destination (HydraDX parachain)
-        const destination = XcmVersionedLocation.V3({
-            parents: 1,
-            interior: XcmV3Junctions.X1(
-                XcmV3Junction.Parachain(HYDRADX_PARA_ID)
-            )
-        });
-
-
 
         const customXcmOnDest = XcmVersionedXcm.V3(
             [
@@ -140,25 +115,21 @@ async function main() {
             ]
         )
 
-        const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(customXcmOnDest)
+        const xcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(customXcmOnDest)
 
         if (xcmWeight.success) {
-            // Create the transaction
-            const tx = assetHubApi.tx.PolkadotXcm.transfer_assets_using_type_and_then({
-                assets,
-            assets_transfer_type: Enum("RemoteReserve", destination),
-            custom_xcm_on_dest: customXcmOnDest,
-            dest: destination,
-            fees_transfer_type: Enum("RemoteReserve", destination),
-            remote_fees_id: dotAssetId,
-            weight_limit: XcmV3WeightLimit.Limited({
-                ref_time: xcmWeight.value.ref_time,
-                    proof_size: xcmWeight.value.proof_size
-                })
-            });
+            const weight = xcmWeight.value
+            // Execute the XCM message with the queried weights
+            const executeTx = hydraDxApi.tx.PolkadotXcm.execute({
+                message: customXcmOnDest,
+                max_weight: {
+                    ref_time: weight.ref_time,
+                    proof_size: weight.proof_size
+                }
+            })
 
             console.log("Submitting XCM transfer with Omnipool swap transaction...")
-            await TransactionService.submitAndWatch(tx, alice, {
+            await TransactionService.submitAndWatch(executeTx, alice, {
                 onSuccess: (status) => {
                     console.log(`Transaction successful in block ${status.blockNumber}`);
                 },
@@ -169,22 +140,8 @@ async function main() {
                     console.log('Transaction status:', status);
                 }
             });
-            
+
         }
-
-        // console.log("Submitting XCM transfer with Omnipool swap transaction...")
-        // await TransactionService.submitAndWatch(tx, alice, {
-        //     onSuccess: (status) => {
-        //         console.log(`Transaction successful in block ${status.blockNumber}`);
-        //     },
-        //     onError: (error) => {
-        //         console.error('Transaction failed:', error);
-        //     },
-        //     onStatusChange: (status) => {
-        //         console.log('Transaction status:', status);
-        //     }
-        // });
-
         // Wait a bit for the transaction to be processed
         await new Promise(resolve => setTimeout(resolve, 5000));
 
