@@ -27,7 +27,7 @@ import {
 } from "@polkadot-api/descriptors"
 
 // Constants
-const TRANSFER_AMOUNT = 100_000_000_000_000n // 1 DOT in planck units
+const TRANSFER_AMOUNT = 200_000_000_000n // 20 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in HydraDX
 const DOT_ASSET_ID = 5 // DOT token ID in HydraDX (example, adjust as needed)
 const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
@@ -71,14 +71,15 @@ async function main() {
     const { alice, aliceKeyPair, bobKeyPair } = initSigners()
 
     // Connect to Asset Hub
-    const { api: assetHubApi, client: assetHubClient } = await connectPapi(XCM_RPC_ASSET_HUB, 'asset-hub')
+    const { api: assetHubApi, client: assetHubClient } = await connectPapi(TEST_RPC_ASSET_HUB, 'asset-hub')
 
     // Connect to HydraDX
-    const { api: hydraDxApi, client: hydraDxClient } = await connectPapi(XCM_RPC_HYDRATION, 'hydration')
+    const { api: hydraDxApi, client: hydraDxClient } = await connectPapi(TEST_RPC_PARACHAIN_HYDRATION, 'hydration')
 
     try {
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0) // Asset Hub SS58 format
         const BOB = ss58Encode(bobKeyPair.publicKey, 63) // HydraDX SS58 format
+        const ALICE_HYDRATION = ss58Encode(aliceKeyPair.publicKey, 63) // HydraDX SS58 format
 
         console.log("Alice address (Asset Hub):", ALICE)
         console.log("Bob address (HydraDX):", BOB)
@@ -102,6 +103,7 @@ async function main() {
         console.log(`- Bob DOT: ${initialHydraDxDotBalance?.free || 0n} planck`)
         console.log(`- Bob HDX: ${initialHydraDxHdxBalance.data.free || 0n} planck`)
 
+        console.log(`Have ${dotBalance} DOT, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e10} DOT`)
         // Check if we have enough balance
         if (initialBalance.data.free < TRANSFER_AMOUNT) {
             throw new Error(`Insufficient balance. Have ${dotBalance} DOT, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e10} DOT`)
@@ -136,7 +138,7 @@ async function main() {
                 parents: 1, // Relay chain
                 interior: XcmV3Junctions.Here()
             },
-            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT / 10n) // 10% for fees
+            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT / 20n) // 10% for fees
         };
 
         // HDX fee for execution on Asset Hub
@@ -182,6 +184,20 @@ async function main() {
 
         const dotAssetFilter = XcmV4AssetAssetFilter.Definite([dotAsset])
         const hdxAssetFilter = XcmV4AssetAssetFilter.Definite([hdxAsset])
+        // HDX asset that we want to receive from swap
+        const HDX_AMOUNT = 66 * 1e12;
+        //print HDX_AMOUNT original
+        console.log(`HDX_AMOUNT original: ${HDX_AMOUNT/1e12}`)
+        const hdxAssetNew = {
+            id: {
+                parents: 0, // Local to HydraDX
+                interior: XcmV3Junctions.X1(
+                    XcmV3Junction.GeneralIndex(BigInt(HDX_ASSET_ID))
+                )
+            },
+            fun: XcmV3MultiassetFungibility.Fungible(BigInt(HDX_AMOUNT)) // Amount will be determined by swap
+        };
+        const hdxDepositFilter = XcmV4AssetAssetFilter.Definite([hdxAssetNew])
 
         // Create XCM message using V4 instructions
         const message = XcmVersionedXcm.V4([
@@ -201,32 +217,26 @@ async function main() {
                     // 2b. Exchange DOT for HDX
                     XcmV4Instruction.ExchangeAsset({
                         give: dotAssetFilter,
-                        want: [hdxAsset],
+                        want: [hdxAssetNew],
                         maximal: true
                     }),
+                    // 2c. Deposit HDX to account on HydraDX
+                    XcmV4Instruction.DepositAsset({
+                        assets: hdxDepositFilter,
+                        beneficiary: {
+                            parents: 0,
+                            interior: XcmV3Junctions.X1(
+                                XcmV3Junction.AccountId32({
+                                    network: undefined,
+                                    id: Binary.fromBytes(aliceKeyPair.publicKey)
+                                })
+                            )
+                        }
+                    })
                 ]
-            }),
-
+            })
         ]);
 
-        /*                     // 2c. Send HDX back to Asset Hub
-                    XcmV4Instruction.DepositReserveAsset({
-                        assets: assetFilter,
-                        dest: assetHubDest,
-                        xcm: [
-                            // 2c.i. Pay for execution on Asset Hub
-                            XcmV4Instruction.BuyExecution({
-                                fees: hdxFeeAsset,
-                                weight_limit: XcmV3WeightLimit.Unlimited()
-                            }),
-                            
-                            // 2c.ii. Deposit to Bob
-                            XcmV4Instruction.DepositAsset({
-                                assets: assetFilter,
-                                beneficiary: beneficiary
-                            })
-                        ]
-                    }) */
         // Query weight for XCM message
         const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
 
@@ -276,8 +286,8 @@ async function main() {
          */
         // Check final balances
         const finalAssetHubBalance = await assetHubApi.query.System.Account.getValue(ALICE)
-        const finalHydraDxDotBalance = await hydraDxApi.query.Tokens.Accounts.getValue(BOB, DOT_ASSET_ID)
-        const finalHydraDxHdxBalance = await hydraDxApi.query.System.Account.getValue(BOB)
+        const finalHydraDxDotBalance = await hydraDxApi.query.Tokens.Accounts.getValue(ALICE_HYDRATION, DOT_ASSET_ID)
+        const finalHydraDxHdxBalance = await hydraDxApi.query.System.Account.getValue(ALICE_HYDRATION)
 
         console.log('\nFinal Balances:')
         console.log('Asset Hub:')
@@ -285,8 +295,12 @@ async function main() {
         console.log(`- Amount deducted: ${Number(initialBalance.data.free - finalAssetHubBalance.data.free) / 1e10} DOT`)
 
         console.log('\nHydraDX:')
-        console.log(`- Bob DOT: ${finalHydraDxDotBalance?.free || 0n} planck`)
-        console.log(`- Bob HDX: ${finalHydraDxHdxBalance.data.free || 0n} planck`)
+        //console.log(`- Alice DOT: ${finalHydraDxDotBalance?.free || 0n} planck`)
+        //amount in DOT without planck
+        console.log(`- Alice DOT: ${Number(finalHydraDxDotBalance?.free || 0n) / 1e10} DOT`)
+        //console.log(`- Alice HDX: ${finalHydraDxHdxBalance.data.free || 0n} planck`)
+        //amount in HDX without planck
+        console.log(`- Alice HDX: ${Number(finalHydraDxHdxBalance.data.free || 0n) / 1e12} HDX`)
         console.log(`- DOT Change: ${(finalHydraDxDotBalance?.free || 0n) - (initialHydraDxDotBalance?.free || 0n)} planck`)
         console.log(`- HDX Change: ${(finalHydraDxHdxBalance.data.free || 0n) - (initialHydraDxHdxBalance.data.free || 0n)} planck`)
 
