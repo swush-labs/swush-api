@@ -20,3 +20,8 @@ export const TEST_RPC = 'ws://localhost:8000'
 export const TEST_RPC_ASSET_HUB = 'ws://localhost:3421'
 export const TEST_RPC_POLKADOT = 'ws://localhost:3420'
 export const TEST_RPC_PARACHAIN_HYDRATION = 'ws://localhost:3422'
+
+
+export const XCM_RPC_ASSET_HUB = 'ws://localhost:8000'
+//hydration
+export const XCM_RPC_HYDRATION = 'ws://localhost:8001'
