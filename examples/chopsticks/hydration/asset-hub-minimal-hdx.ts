@@ -126,7 +126,7 @@ async function main() {
                 parents: 0, // Local to HydraDX
                 interior: XcmV3Junctions.Here()
             },
-            fun: XcmV3MultiassetFungibility.Fungible(0n) // Amount will be determined by swap
+            fun: XcmV3MultiassetFungibility.Fungible(8000000n) // Amount will be determined by swap
         };
 
         // Create fee assets
@@ -181,6 +181,7 @@ async function main() {
         };
 
         const dotAssetFilter = XcmV4AssetAssetFilter.Definite([dotAsset])
+        const hdxAssetFilter = XcmV4AssetAssetFilter.Definite([hdxAsset])
 
         // Create XCM message using V4 instructions
         const message = XcmVersionedXcm.V4([
@@ -192,8 +193,20 @@ async function main() {
                 assets: dotAssetFilter,
                 dest: hydradxDest,
                 xcm: [
+                    // 2a. Pay for execution on HydraDX
+                    XcmV4Instruction.BuyExecution({
+                        fees: dotFeeAsset,
+                        weight_limit: XcmV3WeightLimit.Unlimited()
+                    }),
+                    // 2b. Exchange DOT for HDX
+                    XcmV4Instruction.ExchangeAsset({
+                        give: dotAssetFilter,
+                        want: [hdxAsset],
+                        maximal: true
+                    }),
                 ]
-            })
+            }),
+
         ]);
 
         /*                     // 2c. Send HDX back to Asset Hub
