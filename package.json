@@ -15,18 +15,13 @@
     "dist/services"
   ],
   "scripts": {
-    "build": "tsc && npm run build:esm",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "clean": "rimraf ./dist",
-    "prebuild": "pnpm run clean",
-    "prepare": "pnpm run build",
-    "pack:local": "pnpm run build && pnpm pack",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:registry": "jest services/registry/__tests__",
     "test:cache": "jest services/cache/__tests__",
     "test:network": "jest services/network/__tests__",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "postinstall": "papi"
   },
   "dependencies": {
     "@acala-network/chopsticks": "^1.0.1",
