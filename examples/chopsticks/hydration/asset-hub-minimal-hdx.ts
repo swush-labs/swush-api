@@ -2,6 +2,7 @@ import { sr25519CreateDerive } from "@polkadot-labs/hdkd"
 import {
     DEV_PHRASE,
     entropyToMiniSecret,
+    KeyPair,
     mnemonicToEntropy,
     ss58Decode,
     ss58Encode
@@ -23,11 +24,14 @@ import {
     XcmVersionedXcm,
     XcmV4Instruction,
     XcmV2OriginKind,
-    XcmV4AssetAssetFilter
+    XcmV4AssetAssetFilter,
+    XcmPalletOrigin,
+    PolkadotRuntimeOriginCaller
 } from "@polkadot-api/descriptors"
+import { serializeKey } from "@/assets/utils"
 
 // Constants
-const TRANSFER_AMOUNT = 200_000_000_000n // 20 DOT in planck units
+const TRANSFER_AMOUNT = 200_000_000_00n // 2 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in HydraDX
 const DOT_ASSET_ID = 5 // DOT token ID in HydraDX (example, adjust as needed)
 const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
@@ -156,15 +160,16 @@ async function main() {
 
         // Create locations
         // Beneficiary account (Bob) on Asset Hub
-        const beneficiary = {
+        const beneficiary = (keypair: KeyPair) => ({
             parents: 0,
             interior: XcmV3Junctions.X1(
                 XcmV3Junction.AccountId32({
                     network: undefined,
-                    id: Binary.fromBytes(bobKeyPair.publicKey)
+                    id: Binary.fromBytes(keypair.publicKey)
                 })
             )
-        };
+        });
+
 
         // HydraDX destination
         const hydradxDest = {
@@ -187,7 +192,7 @@ async function main() {
         // HDX asset that we want to receive from swap
         const HDX_AMOUNT = 66 * 1e12;
         //print HDX_AMOUNT original
-        console.log(`HDX_AMOUNT original: ${HDX_AMOUNT/1e12}`)
+        console.log(`HDX_AMOUNT original: ${HDX_AMOUNT / 1e12}`)
         const hdxAssetNew = {
             id: {
                 parents: 0, // Local to HydraDX
@@ -223,15 +228,7 @@ async function main() {
                     // 2c. Deposit HDX to account on HydraDX
                     XcmV4Instruction.DepositAsset({
                         assets: hdxDepositFilter,
-                        beneficiary: {
-                            parents: 0,
-                            interior: XcmV3Junctions.X1(
-                                XcmV3Junction.AccountId32({
-                                    network: undefined,
-                                    id: Binary.fromBytes(aliceKeyPair.publicKey)
-                                })
-                            )
-                        }
+                        beneficiary: beneficiary(aliceKeyPair)
                     })
                 ]
             })
@@ -250,6 +247,35 @@ async function main() {
                 }
             });
 
+            //print call data
+            const callData = await tx.getEncodedData();
+            console.log("Call data hex: ", callData.asHex());
+
+            // const xcmPalletOrigin = XcmPalletOrigin.Xcm({
+            //     parents: 0,
+            //     interior: XcmV3Junctions.X1(
+            //         XcmV3Junction.AccountId32({
+            //             network: undefined,
+            //             id: Binary.fromBytes(aliceKeyPair.publicKey)
+            //         })
+            //     )
+            // })
+            //Enum("PolkadotXcm", xcmPalletOrigin),
+            const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
+                PolkadotRuntimeOriginCaller.system({
+                    type: "Signed",
+                    value: ALICE
+                }),
+                tx.decodedCall,
+                {}
+            );
+            if (dryRun.success) {
+                console.log("Dry run result:", dryRun);
+                //pretty print dryRun
+                console.log(serializeKey(dryRun));
+            } else {
+                console.error("Dry run failed:", dryRun);
+            }
             console.log("Submitting XCM transfer with swap transaction...");
             await TransactionService.submitAndWatch(tx, alice, {
                 onSuccess: (status) => {
@@ -271,19 +297,6 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 10000));
 
 
-        /*         // Check final DOT balance on Asset Hub
-                const finalBalance = await assetHubApi.query.System.Account.getValue(ALICE);
-                console.log(`Final DOT balance of Alice: ${finalBalance.data.free} planck (${Number(finalBalance.data.free) / 1e10} DOT)`);
-                console.log(`Amount deducted: ${Number(initialBalance.data.free - finalBalance.data.free) / 1e10} DOT`);
-        
-                // Check HDX balance of Bob on Asset Hub
-                try {
-                    const bobTokensBalance = await assetHubApi.query.Assets.Account.getValue(HDX_ASSET_ID, BOB);
-                    console.log(`HDX balance of Bob on Asset Hub: ${bobTokensBalance?.balance || 0n} planck`);
-                } catch (error) {
-                    console.error('Error checking HDX balance:', error);
-                }
-         */
         // Check final balances
         const finalAssetHubBalance = await assetHubApi.query.System.Account.getValue(ALICE)
         const finalHydraDxDotBalance = await hydraDxApi.query.Tokens.Accounts.getValue(ALICE_HYDRATION, DOT_ASSET_ID)
