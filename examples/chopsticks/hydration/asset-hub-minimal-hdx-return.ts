@@ -26,12 +26,14 @@ import {
     XcmV2OriginKind,
     XcmV4AssetAssetFilter,
     XcmPalletOrigin,
-    PolkadotRuntimeOriginCaller
+    PolkadotRuntimeOriginCaller,
+    XcmV4AssetWildAsset,
+    XcmV2MultiassetWildFungibility
 } from "@polkadot-api/descriptors"
 import { serializeKey } from "@/assets/utils"
 
 // Constants
-const TRANSFER_AMOUNT = 200_000_000_00n // 2 DOT in planck units
+const TRANSFER_AMOUNT = 200_000_000_000n // 20 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in HydraDX
 const DOT_ASSET_ID = 5 // DOT token ID in HydraDX (example, adjust as needed)
 const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
@@ -84,7 +86,7 @@ async function main() {
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0) // Asset Hub SS58 format
         const BOB = ss58Encode(bobKeyPair.publicKey, 63) // HydraDX SS58 format
         const ALICE_HYDRATION = ss58Encode(aliceKeyPair.publicKey, 63) // HydraDX SS58 format
-
+        const BOB_ASSET_HUB = ss58Encode(bobKeyPair.publicKey, 0) // Asset Hub SS58 format
         console.log("Alice address (Asset Hub):", ALICE)
         console.log("Bob address (HydraDX):", BOB)
 
@@ -142,8 +144,21 @@ async function main() {
                 parents: 1, // Relay chain
                 interior: XcmV3Junctions.Here()
             },
+            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT / 10n) // 10% for fees
+        };
+
+        const dotFeeAssetHDX = {
+            id: {
+                parents: 1, // Local to Asset Hub
+                interior: XcmV3Junctions.X3([
+                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID), // Assets pallet
+                    XcmV3Junction.PalletInstance(50), // USDT asset ID (example)
+                    XcmV3Junction.GeneralIndex(BigInt(1984))
+                ])
+            },
             fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT / 20n) // 10% for fees
         };
+        const dotFeeAssetHDXFilter = XcmV4AssetAssetFilter.Definite([dotFeeAssetHDX])
 
         // HDX fee for execution on Asset Hub
         const hdxFeeAsset = {
@@ -155,7 +170,7 @@ async function main() {
                     XcmV3Junction.GeneralIndex(BigInt(HDX_ASSET_ID))
                 ])
             },
-            fun: XcmV3MultiassetFungibility.Fungible(minBuyAmount / 10n) // 10% for fees
+            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT / 10n) // 10% for fees
         };
 
         // Create locations
@@ -170,6 +185,15 @@ async function main() {
             )
         });
 
+        const customBeneficiary = {
+            parents: 0,
+            interior: XcmV3Junctions.X1(
+                XcmV3Junction.AccountId32({
+                    network: undefined,
+                    id: Binary.fromText("124C7vfXbvBausfviN3ydZjj4voxPyEwmnJDuNJ9y4kU3ETN")
+                })
+            )
+        };
 
         // HydraDX destination
         const hydradxDest = {
@@ -208,10 +232,11 @@ async function main() {
         const USDT_ASSET_ID = 5;
         const usdtAssetNew = {
             id: {
-                parents: 0, // Local to HydraDX
-                interior: XcmV3Junctions.X1(
+                parents: 1, // Local to HydraDX
+                interior: XcmV3Junctions.X2([
+                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID),
                     XcmV3Junction.GeneralIndex(BigInt(USDT_ASSET_ID))
-                )
+                ])
             },
             fun: XcmV3MultiassetFungibility.Fungible(BigInt(USDT_AMOUNT)) // Amount will be determined by swap
         };
@@ -226,9 +251,24 @@ async function main() {
                     XcmV3Junction.GeneralIndex(BigInt(1984))
                 ])
             },
-            fun: XcmV3MultiassetFungibility.Fungible(BigInt(7000000)) // Amount will be determined by swap
+            fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000)) // Amount will be determined by swap
         };
         const usdtAssetFilter = XcmV4AssetAssetFilter.Definite([usdtAsset])
+
+        const USDT_FEE_AMOUNT_ON_ASSET_HUB = 5000000
+        
+        const usdtAssetFee = {
+            id: {
+                parents: 1, // Local to Asset Hub
+                interior: XcmV3Junctions.X3([
+                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID), // Assets pallet
+                    XcmV3Junction.PalletInstance(50), // USDT asset ID (example)
+                    XcmV3Junction.GeneralIndex(BigInt(1984))
+                ])
+            },
+            fun: XcmV3MultiassetFungibility.Fungible(BigInt(USDT_FEE_AMOUNT_ON_ASSET_HUB)) // Amount will be determined by swap
+        };
+        const usdtAssetFilterFee = XcmV4AssetAssetFilter.Definite([usdtAssetFee])
 
         const usdtAssetAH = {
             id: {
@@ -238,10 +278,21 @@ async function main() {
                     XcmV3Junction.GeneralIndex(BigInt(1984))
                 ])
             },
-            fun: XcmV3MultiassetFungibility.Fungible(BigInt(7000000)) // Amount will be determined by swap
+            fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000)) // Amount will be determined by swap
         };
         const usdtAssetFilterAH = XcmV4AssetAssetFilter.Definite([usdtAssetAH])
 
+        const wildAllOf = XcmV4AssetWildAsset.AllOf({
+            id: {
+                parents: 1, // Local to Asset Hub
+                interior: XcmV3Junctions.X3([
+                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID), // Assets pallet
+                    XcmV3Junction.PalletInstance(50), // USDT asset ID (example)
+                    XcmV3Junction.GeneralIndex(BigInt(1984))
+                ])
+            },
+            fun: XcmV2MultiassetWildFungibility.Fungible() // Amount will be determined by swap
+        })
         // Create XCM message using V4 instructions
         const message = XcmVersionedXcm.V4([
             // 1. Withdraw DOT from Asset Hub
@@ -263,24 +314,32 @@ async function main() {
                         want: [usdtAsset],
                         maximal: true
                     }),
-                    // 2c. Send HDX back to Asset Hub
-                    XcmV4Instruction.DepositReserveAsset({
-                        assets: usdtAssetFilterAH,
-                        dest: assetHubDest,
-                        xcm: [
-                            // 2c.i. Pay for execution on Asset Hub
-                            XcmV4Instruction.BuyExecution({
-                                fees: dotFeeAsset,
-                                weight_limit: XcmV3WeightLimit.Unlimited()
-                            }),
-
-                            // 2c.ii. Deposit to Bob
-                            XcmV4Instruction.DepositAsset({
-                                assets: usdtAssetFilterAH,
-                                beneficiary: beneficiary(bobKeyPair)
-                            })
-                        ]
+                    XcmV4Instruction.DepositAsset({
+                        assets: XcmV4AssetAssetFilter.Wild(wildAllOf),
+                        beneficiary: beneficiary(bobKeyPair)
                     })
+                    // 2c. Send swapped assets (USDT) back to Asset Hub
+                    // XcmV4Instruction.DepositReserveAsset({
+                    //      assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                    //     //assets: usdtAssetFilter,
+                    //     dest: assetHubDest,
+                    //     xcm: [
+                    //         // 2c.i. Pay for execution on Asset Hub
+                    //         XcmV4Instruction.BuyExecution({
+                    //             fees: usdtAssetFee,
+                    //             weight_limit: XcmV3WeightLimit.Unlimited()
+                    //         }),
+                    //         // XcmV4Instruction.SetFeesMode({
+                    //         //     jit_withdraw: true
+                    //         // }),
+
+                    //         // 2c.ii. Deposit to Bob
+                    //         XcmV4Instruction.DepositAsset({
+                    //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                    //             beneficiary: beneficiary(bobKeyPair)
+                    //         })
+                    //     ]
+                    // })
                 ]
             })
         ]);
@@ -323,7 +382,7 @@ async function main() {
             if (dryRun.success) {
                 console.log("Dry run result:", dryRun);
                 //pretty print dryRun
-                console.log(serializeKey(dryRun));
+                //console.log(serializeKey(dryRun));
             } else {
                 console.error("Dry run failed:", dryRun);
             }
