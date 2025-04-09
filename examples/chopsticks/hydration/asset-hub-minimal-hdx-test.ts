@@ -28,7 +28,9 @@ import {
     XcmPalletOrigin,
     PolkadotRuntimeOriginCaller,
     XcmV4AssetWildAsset,
-    XcmV2MultiassetWildFungibility
+    XcmV2MultiassetWildFungibility,
+    XcmV3Instruction,
+    XcmV3MultiassetMultiAssetFilter
 } from "@polkadot-api/descriptors"
 import { serializeKey } from "@/assets/utils"
 
@@ -116,7 +118,7 @@ async function main() {
         }
         const TXN_FEE1 = TRANSFER_AMOUNT / 50n
         const TXN_FEE2 = TRANSFER_AMOUNT / 10n
-        const FINAL_TRANSFER_AMOUNT = TRANSFER_AMOUNT + TXN_FEE1 + TXN_FEE2
+        const FINAL_TRANSFER_AMOUNT = TRANSFER_AMOUNT + TXN_FEE1
         // Create assets
         // DOT asset for withdrawal from Asset Hub
         const dotAsset = {
@@ -126,7 +128,7 @@ async function main() {
             },
             fun: XcmV3MultiassetFungibility.Fungible(FINAL_TRANSFER_AMOUNT)
         };
-        const dotAssetFilter = XcmV4AssetAssetFilter.Definite([dotAsset])
+    //    const dotAssetFilter = XcmV3MultiassetMultiAssetFilter.Definite([dotAsset])
 
         // Create fee assets
         // DOT fee for execution on HydraDX
@@ -208,141 +210,142 @@ async function main() {
             fun: XcmV2MultiassetWildFungibility.Fungible() // Amount will be determined by swap
         })
         // Create XCM message using V4 instructions
-        const message = XcmVersionedXcm.V4([
+        const message = XcmVersionedXcm.V3([
             // 1. Withdraw DOT from Asset Hub
-            XcmV4Instruction.WithdrawAsset([dotAsset]),
+            XcmV3Instruction.WithdrawAsset([
+                {
+                    id: XcmV3MultiassetAssetId.Concrete({
+                        parents: 1,
+                        interior: XcmV3Junctions.Here()
+                }),
+                    fun: XcmV3MultiassetFungibility.Fungible(FINAL_TRANSFER_AMOUNT)
+                }
+            ]),
+            // XcmV3Instruction.ClearOrigin(),
 
             // 2. Deposit to HydraDX with instructions
-            XcmV4Instruction.DepositReserveAsset({
-                assets: dotAssetFilter,
-                dest: hydradxDest,
+            XcmV3Instruction.DepositReserveAsset({
+                assets: XcmV3MultiassetMultiAssetFilter.Definite([{
+                    id: XcmV3MultiassetAssetId.Concrete({
+                        parents: 1,
+                        interior: XcmV3Junctions.Here()
+                    }),
+                    fun: XcmV3MultiassetFungibility.Fungible(FINAL_TRANSFER_AMOUNT)
+                }]),
+                dest: assetHubDest,
                 xcm: [
-                    // 2a. Pay for execution on HydraDX
-                    XcmV4Instruction.BuyExecution({
-                        fees: dotFeeAsset1,
+                    // XcmV4Instruction.SetFeesMode({
+                    //     jit_withdraw: true
+                    // }),
+                    // 2c.i. Pay for execution on Asset Hub
+                    XcmV3Instruction.BuyExecution({
+                        fees: {
+                            id: XcmV3MultiassetAssetId.Concrete({
+                                parents: 1,
+                                interior: XcmV3Junctions.Here()
+                            }),
+                            fun: XcmV3MultiassetFungibility.Fungible(TXN_FEE1)
+                        },
                         weight_limit: XcmV3WeightLimit.Unlimited()
                     }),
-                    // 2b. Exchange DOT for HDX
-                    XcmV4Instruction.ExchangeAsset({
-                        give: dotAssetSwapFilter,
-                        want: [usdtAsset],
-                        maximal: true
-                    }),
-                    // XcmV4Instruction.DepositAsset({
-                    //     assets: XcmV4AssetAssetFilter.Wild(wildAllOf),
-                    //     beneficiary: beneficiary(bobKeyPair)
-                    // })
-                    // 2c. Send swapped assets (USDT) back to Asset Hub
-                    XcmV4Instruction.DepositReserveAsset({
-                        //assets: XcmV4AssetAssetFilter.Wild(wildAllOf),
-                        assets:  XcmV4AssetAssetFilter.Wild(
-                            XcmV4AssetWildAsset.All()
-                        ),
-                        //assets: usdtAssetFilter,
-                        dest: assetHubDest,
-                        xcm: [
-                            // XcmV4Instruction.SetFeesMode({
-                            //     jit_withdraw: true
-                            // }),
-                            // 2c.i. Pay for execution on Asset Hub
-                            XcmV4Instruction.BuyExecution({
-                                fees: dotFeeAsset2,
-                                weight_limit: XcmV3WeightLimit.Unlimited()
-                            }),
 
-                            // 2c.ii. Deposit to Bob
-                            XcmV4Instruction.DepositAsset({
-                                assets:XcmV4AssetAssetFilter.Wild(
-                                    XcmV4AssetWildAsset.All()
-                                ),
-                                beneficiary: beneficiary(bobKeyPair)
-                            })
-                        ]
+                    // 2c.ii. Deposit to Bob
+                    XcmV3Instruction.DepositAsset({
+                        assets: XcmV3MultiassetMultiAssetFilter.Definite([{
+                            id: XcmV3MultiassetAssetId.Concrete({
+                                parents: 1,
+                                interior: XcmV3Junctions.Here()
+                            }),
+                            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                        }]),
+                        beneficiary: beneficiary(bobKeyPair)
                     })
                 ]
             })
         ]);
 
-        // Query weight for XCM message
-        const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
+    // Query weight for XCM message
+    const xcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(message);
 
-        if (xcmWeight.success) {
-            // Execute XCM message on Asset Hub
-            const tx = assetHubApi.tx.PolkadotXcm.execute({
-                message: message,
-                max_weight: {
-                    ref_time: xcmWeight.value.ref_time,
-                    proof_size: xcmWeight.value.proof_size
-                }
-            });
+    console.log("XCM weight:", xcmWeight);
 
-            //print call data
-            const callData = await tx.getEncodedData();
-            console.log("Call data hex: ", callData.asHex());
-
-            const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
-                PolkadotRuntimeOriginCaller.system({
-                    type: "Signed",
-                    value: ALICE
-                }),
-                tx.decodedCall,
-                {}
-            );
-            if (dryRun.success) {
-                console.log("Dry run result:", dryRun);
-                //pretty print dryRun
-                //console.log(serializeKey(dryRun));
-            } else {
-                console.error("Dry run failed:", dryRun);
+    if (xcmWeight.success) {
+        // Execute XCM message on Asset Hub
+        const tx = hydraDxApi.tx.PolkadotXcm.execute({
+            message: message,
+            max_weight: {
+                ref_time: xcmWeight.value.ref_time,
+                proof_size: xcmWeight.value.proof_size
             }
-            console.log("Submitting XCM transfer with swap transaction...");
-            await TransactionService.submitAndWatch(tx, alice, {
-                onSuccess: (status) => {
-                    console.log(`Transaction successful in block ${status.blockNumber}`);
-                },
-                onError: (error) => {
-                    console.error('Transaction failed:', error);
-                },
-                onStatusChange: (status) => {
-                    console.log('Transaction status:', status);
-                }
-            });
+        });
+
+        //print call data
+        const callData = await tx.getEncodedData();
+        console.log("Call data hex: ", callData.asHex());
+
+        const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
+            PolkadotRuntimeOriginCaller.system({
+                type: "Signed",
+                value: ALICE
+            }),
+            tx.decodedCall,
+            {}
+        );
+        if (dryRun.success) {
+            console.log("Dry run result:", dryRun);
+            //pretty print dryRun
+            //console.log(serializeKey(dryRun));
         } else {
-            console.error("Failed to query XCM weight:", xcmWeight);
-            return;
+            console.error("Dry run failed:", dryRun);
         }
-
-        // Wait a bit for the transaction to be processed
-        await new Promise(resolve => setTimeout(resolve, 10000));
-
-
-        // Check final balances
-        const finalAssetHubBalance = await assetHubApi.query.System.Account.getValue(ALICE)
-        const finalHydraDxDotBalance = await hydraDxApi.query.Tokens.Accounts.getValue(ALICE_HYDRATION, DOT_ASSET_ID)
-        const finalHydraDxHdxBalance = await hydraDxApi.query.System.Account.getValue(ALICE_HYDRATION)
-
-        console.log('\nFinal Balances:')
-        console.log('Asset Hub:')
-        console.log(`- Alice DOT: ${finalAssetHubBalance.data.free} planck (${Number(finalAssetHubBalance.data.free) / 1e10} DOT)`)
-        console.log(`- Amount deducted: ${Number(initialBalance.data.free - finalAssetHubBalance.data.free) / 1e10} DOT`)
-
-        console.log('\nHydraDX:')
-        //console.log(`- Alice DOT: ${finalHydraDxDotBalance?.free || 0n} planck`)
-        //amount in DOT without planck
-        console.log(`- Alice DOT: ${Number(finalHydraDxDotBalance?.free || 0n) / 1e10} DOT`)
-        //console.log(`- Alice HDX: ${finalHydraDxHdxBalance.data.free || 0n} planck`)
-        //amount in HDX without planck
-        console.log(`- Alice HDX: ${Number(finalHydraDxHdxBalance.data.free || 0n) / 1e12} HDX`)
-        console.log(`- DOT Change: ${(finalHydraDxDotBalance?.free || 0n) - (initialHydraDxDotBalance?.free || 0n)} planck`)
-        console.log(`- HDX Change: ${(finalHydraDxHdxBalance.data.free || 0n) - (initialHydraDxHdxBalance.data.free || 0n)} planck`)
-
-        console.log("write a poem about the transaction")
-    } catch (error) {
-        console.error('Transaction error:', error);
-    } finally {
-        assetHubClient.destroy();
-        hydraDxClient.destroy();
+        console.log("Submitting XCM transfer with swap transaction...");
+        await TransactionService.submitAndWatch(tx, alice, {
+            onSuccess: (status) => {
+                console.log(`Transaction successful in block ${status.blockNumber}`);
+            },
+            onError: (error) => {
+                console.error('Transaction failed:', error);
+            },
+            onStatusChange: (status) => {
+                console.log('Transaction status:', status);
+            }
+        });
+    } else {
+        console.error("Failed to query XCM weight:", xcmWeight);
+        return;
     }
+
+    // // Wait a bit for the transaction to be processed
+    // await new Promise(resolve => setTimeout(resolve, 10000));
+
+
+    // // Check final balances
+    // const finalAssetHubBalance = await assetHubApi.query.System.Account.getValue(ALICE)
+    // const finalHydraDxDotBalance = await hydraDxApi.query.Tokens.Accounts.getValue(ALICE_HYDRATION, DOT_ASSET_ID)
+    // const finalHydraDxHdxBalance = await hydraDxApi.query.System.Account.getValue(ALICE_HYDRATION)
+
+    // console.log('\nFinal Balances:')
+    // console.log('Asset Hub:')
+    // console.log(`- Alice DOT: ${finalAssetHubBalance.data.free} planck (${Number(finalAssetHubBalance.data.free) / 1e10} DOT)`)
+    // console.log(`- Amount deducted: ${Number(initialBalance.data.free - finalAssetHubBalance.data.free) / 1e10} DOT`)
+
+    // console.log('\nHydraDX:')
+    // //console.log(`- Alice DOT: ${finalHydraDxDotBalance?.free || 0n} planck`)
+    // //amount in DOT without planck
+    // console.log(`- Alice DOT: ${Number(finalHydraDxDotBalance?.free || 0n) / 1e10} DOT`)
+    // //console.log(`- Alice HDX: ${finalHydraDxHdxBalance.data.free || 0n} planck`)
+    // //amount in HDX without planck
+    // console.log(`- Alice HDX: ${Number(finalHydraDxHdxBalance.data.free || 0n) / 1e12} HDX`)
+    // console.log(`- DOT Change: ${(finalHydraDxDotBalance?.free || 0n) - (initialHydraDxDotBalance?.free || 0n)} planck`)
+    // console.log(`- HDX Change: ${(finalHydraDxHdxBalance.data.free || 0n) - (initialHydraDxHdxBalance.data.free || 0n)} planck`)
+
+    console.log("write a poem about the transaction")
+} catch (error) {
+    console.error('Transaction error:', error);
+} finally {
+    assetHubClient.destroy();
+    hydraDxClient.destroy();
+}
 }
 
 main().catch(console.error);

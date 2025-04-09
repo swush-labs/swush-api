@@ -15,7 +15,7 @@ import { transferParaToAssetHub } from "../xcmApi";
 import { TypedApi } from "polkadot-api";
 
 // Constants
-const TRANSFER_AMOUNT = 100_000_000_000_000n // 1 DOT in planck units
+const TRANSFER_AMOUNT = 200_000_000_000n // 1 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in Hydration
 const BLOCK_PRODUCTION_COUNT = 2
 const TRANSACTION_WAIT_TIME = 8000 // 5 seconds

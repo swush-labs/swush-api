@@ -68,6 +68,7 @@ export const transferParaToAssetHub = (
 			interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(paraId)), // Asset Hub paraID
 		}),
 		beneficiary: getBeneficiary(address),
+		// assets: getCustomNativeAsset(amount, 1, 1984), // DOT is from relay chain (parent: 1) or HDX is from parachain (parent: 0)
 		assets: getNativeAsset(amount, 1), // DOT is from relay chain (parent: 1) or HDX is from parachain (parent: 0)
 		fee_asset_item: 0,
 		weight_limit: XcmV3WeightLimit.Unlimited(),
@@ -92,6 +93,15 @@ const getNativeAsset = (amount: bigint, parents: 1 | 0) =>
 				parents: parents, // 1 for relay chain DOT, 0 for local asset
 				interior: XcmV3Junctions.Here(),
 			}),
+			fun: XcmV3MultiassetFungibility.Fungible(amount),
+		},
+	]);
+
+
+const getCustomNativeAsset = (amount: bigint, parents: 1 | 0, assetId: bigint | number) =>
+	XcmVersionedAssets.V4([
+		{
+			id: getXcmV3Multilocation(parents, 1000, 50, assetId),
 			fun: XcmV3MultiassetFungibility.Fungible(amount),
 		},
 	]);
