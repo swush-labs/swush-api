@@ -116,7 +116,7 @@ async function main() {
         }
         const TXN_FEE1 = TRANSFER_AMOUNT / 50n
         const TXN_FEE2 = TRANSFER_AMOUNT / 50n
-        const FINAL_TRANSFER_AMOUNT = TRANSFER_AMOUNT + TXN_FEE1 + TXN_FEE2
+        const FINAL_TRANSFER_AMOUNT = TRANSFER_AMOUNT + TXN_FEE1*2n;
         // Create assets
         // DOT asset for withdrawal from Asset Hub
         const dotAsset = {
@@ -214,42 +214,43 @@ async function main() {
                         weight_limit: XcmV3WeightLimit.Unlimited()
                     }),
                     // // 2b. Exchange DOT for HDX
-                    // XcmV4Instruction.ExchangeAsset({
-                    //     give: dotAssetSwapFilter,
-                    //     want: [usdtAsset],
-                    //     maximal: true
-                    // }),
+                    XcmV4Instruction.ExchangeAsset({
+                        give: dotAssetSwapFilter,
+                        want: [usdtAsset],
+                        maximal: true
+                    }),
                     // XcmV4Instruction.DepositAsset({
                     //     assets: XcmV4AssetAssetFilter.Wild(wildAllOf),
                     //     beneficiary: beneficiary(bobKeyPair)
                     // })
                     // 2c. Send swapped assets (USDT) back to Asset Hub
-                    XcmV4Instruction.DepositReserveAsset({
-                        //assets: XcmV4AssetAssetFilter.Wild(wildAllOf),
-                        assets:  XcmV4AssetAssetFilter.Wild(
+                    XcmV4Instruction.InitiateReserveWithdraw({
+                        // assets: XcmV4AssetAssetFilter.Definite([
+                        //     {
+                        //         id: {
+                        //             parents: 1,
+                        //             interior: XcmV3Junctions.Here()
+                        //         },
+                        //         fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                        //     }
+                        // ]),
+                        assets: XcmV4AssetAssetFilter.Wild(
                             XcmV4AssetWildAsset.All()
                         ),
-                        //assets: usdtAssetFilter,
-                        dest: assetHubDest,
+                        reserve: assetHubDest,
                         xcm: [
-                            // XcmV4Instruction.SetFeesMode({
-                            //     jit_withdraw: true
-                            // }),
-                            // 2c.i. Pay for execution on Asset Hub
                             XcmV4Instruction.BuyExecution({
                                 fees: dotFeeAsset,
                                 weight_limit: XcmV3WeightLimit.Unlimited()
                             }),
-
-                            // 2c.ii. Deposit to Bob
                             XcmV4Instruction.DepositAsset({
-                                assets:XcmV4AssetAssetFilter.Wild(
+                                assets: XcmV4AssetAssetFilter.Wild(
                                     XcmV4AssetWildAsset.All()
                                 ),
                                 beneficiary: beneficiary(bobKeyPair)
                             })
                         ]
-                    })
+                    }),
                 ]
             })
         ]);
