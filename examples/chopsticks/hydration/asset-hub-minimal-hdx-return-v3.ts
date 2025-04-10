@@ -313,7 +313,7 @@ async function main() {
                 fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
             }]),
             dest: hydradxDest,
-            xcm: [
+            xcm: [/* 
                 // 2a. Pay for HydraDX execution with calculated fee
                 XcmV4Instruction.BuyExecution({
                     fees: {
@@ -349,24 +349,24 @@ async function main() {
                     reserve: assetHubDest,
                     xcm: [
                         // Pay for Asset Hub execution with calculated fee
-                        XcmV4Instruction.BuyExecution({
-                            fees: {
-                                id: {
-                                    parents: 1,
-                                    interior: XcmV3Junctions.Here()
-                                },
-                                fun: XcmV3MultiassetFungibility.Fungible(ASSET_HUB_RETURN_FEE)
-                            },
-                            //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
-                            weight_limit: XcmV3WeightLimit.Unlimited()
-                        }),
-                        XcmV4Instruction.DepositAsset({
-                            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                            beneficiary: beneficiary(bobKeyPair)
-                        })
+                        // XcmV4Instruction.BuyExecution({
+                        //     fees: {
+                        //         id: {
+                        //             parents: 1,
+                        //             interior: XcmV3Junctions.Here()
+                        //         },
+                        //         fun: XcmV3MultiassetFungibility.Fungible(ASSET_HUB_RETURN_FEE)
+                        //     },
+                        //     //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
+                        //     weight_limit: XcmV3WeightLimit.Unlimited()
+                        // }),
+                        // XcmV4Instruction.DepositAsset({
+                        //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        //     beneficiary: beneficiary(bobKeyPair)
+                        // })
                     ]
                 })
-            ]
+           */  ]
         })
         ]);
 
@@ -398,6 +398,7 @@ async function main() {
         // Use the execution fee as a baseline for delivery fee if not available
         const hydraDxDeliveryFeeValue = extractDeliveryFee(hydraDxDeliveryFee.value, hydraDxFeeValue);
         const HYDRADX_EXECUTION_FEE = (hydraDxFeeValue + hydraDxDeliveryFeeValue) * BUFFER_PERCENTAGE / 100n;
+    // const HYDRADX_EXECUTION_FEE = (hydraDxDeliveryFeeValue) * BUFFER_PERCENTAGE / 100n;
 
         // Log all fee components with more detailed information
         console.log("\nDetailed Fee Breakdown:");
