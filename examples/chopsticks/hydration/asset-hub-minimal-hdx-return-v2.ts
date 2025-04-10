@@ -114,8 +114,7 @@ async function main() {
         if (initialBalance.data.free < TRANSFER_AMOUNT) {
             throw new Error(`Insufficient balance. Have ${dotBalance} DOT, trying to transfer ${Number(TRANSFER_AMOUNT) / 1e10} DOT`)
         }
-        const TXN_FEE1 = TRANSFER_AMOUNT / 50n
-        const TXN_FEE2 = TRANSFER_AMOUNT / 50n
+        const TXN_FEE1 = TRANSFER_AMOUNT / 5n
         const FINAL_TRANSFER_AMOUNT = TRANSFER_AMOUNT + TXN_FEE1*2n;
         // Create assets
         // DOT asset for withdrawal from Asset Hub
