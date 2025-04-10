@@ -151,10 +151,35 @@ async function main() {
 
         // Step 2: Calculate weights and fees for Asset Hub return operations
         console.log("Calculating Asset Hub return journey weights and fees...");
+        // const assetHubOperations = XcmVersionedXcm.V4([
+        //     XcmV4Instruction.DepositAsset({
+        //         assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+        //         beneficiary: beneficiary(bobKeyPair)
+        //     })
+        // ]);
+
         const assetHubOperations = XcmVersionedXcm.V4([
-            XcmV4Instruction.DepositAsset({
+            XcmV4Instruction.InitiateReserveWithdraw({
                 assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                beneficiary: beneficiary(bobKeyPair)
+                reserve: assetHubDest,
+                xcm: [
+                    // Pay for Asset Hub execution with calculated fee
+                    XcmV4Instruction.BuyExecution({
+                        fees: {
+                            id: {
+                                parents: 1,
+                                interior: XcmV3Junctions.Here()
+                            },
+                            fun: XcmV3MultiassetFungibility.Fungible(1000000000n)
+                        },
+                        //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
+                        weight_limit: XcmV3WeightLimit.Unlimited()
+                    }),
+                    XcmV4Instruction.DepositAsset({
+                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        beneficiary: beneficiary(bobKeyPair)
+                    })
+                ]
             })
         ]);
 
@@ -178,20 +203,71 @@ async function main() {
         }
 
         // Calculate Asset Hub delivery fees
-        const assetHubDeliveryFee = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
-            XcmVersionedLocation.V3(hydradxDest),
+        const assetHubDeliveryFee = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
+            XcmVersionedLocation.V4(assetHubDest),
             assetHubOperations
         );
         if (!assetHubDeliveryFee.success) {
             throw new Error("Failed to calculate Asset Hub delivery fees");
         }
 
+        console.log("assetHubDeliveryFee", assetHubDeliveryFee)
+        //print using json format
+        console.log(serializeKey(assetHubDeliveryFee))
+
+        // Helper function to safely convert fee values to BigInt
+        const extractFeeBigInt = (fee: any): bigint => {
+            if (typeof fee === 'bigint') return fee;
+            if (typeof fee === 'number') return BigInt(fee);
+            if (typeof fee === 'string') return BigInt(fee);
+            if (fee && typeof fee.toString === 'function') return BigInt(fee.toString());
+            throw new Error(`Unable to convert fee value to BigInt: ${fee}`);
+        };
+
+        // Helper function to extract delivery fee from XCM response
+        const extractDeliveryFee = (deliveryFeeResponse: any, defaultValue?: bigint): bigint => {
+            try {
+                // Handle the specific V4 response structure
+                if (deliveryFeeResponse?.type === 'V4' && Array.isArray(deliveryFeeResponse.value)) {
+                    // If array is empty and default value provided, return default
+                    if (deliveryFeeResponse.value.length === 0 && defaultValue !== undefined) {
+                        console.log('Using default delivery fee value:', defaultValue.toString());
+                        return defaultValue;
+                    }
+
+                    const firstAsset = deliveryFeeResponse.value[0];
+                    if (firstAsset?.fun?.type === 'Fungible' && firstAsset.fun.value) {
+                        return extractFeeBigInt(firstAsset.fun.value);
+                    }
+                }
+
+                // If we have a default value, use it instead of throwing
+                if (defaultValue !== undefined) {
+                    console.log('Using default delivery fee value:', defaultValue.toString());
+                    return defaultValue;
+                }
+
+                throw new Error('Could not find delivery fee value in response');
+            } catch (error) {
+                if (defaultValue !== undefined) {
+                    console.log('Error extracting fee, using default value:', defaultValue.toString());
+                    return defaultValue;
+                }
+                console.error('Error extracting delivery fee:', error);
+                console.debug('Delivery fee response:', JSON.stringify(deliveryFeeResponse, null, 2));
+                throw error;
+            }
+        };
+
         // Apply buffer to Asset Hub fees
-        const ASSET_HUB_RETURN_FEE = (BigInt(assetHubFee.value.toString()) + BigInt(assetHubDeliveryFee.value.toString())) * BUFFER_PERCENTAGE / 100n;
+        const assetHubFeeValue = extractFeeBigInt(assetHubFee.value);
+        // Use the execution fee as a baseline for delivery fee if not available
+        const assetHubDeliveryFeeValue = extractDeliveryFee(assetHubDeliveryFee.value, assetHubFeeValue);
+        const ASSET_HUB_RETURN_FEE = (assetHubFeeValue + assetHubDeliveryFeeValue) * BUFFER_PERCENTAGE / 100n;
 
         // Step 1: Calculate weights and fees for HydraDX operations
         console.log("\nCalculating HydraDX execution weights and fees...");
-        const hydraDxOperations = XcmVersionedXcm.V4([
+/*         const hydraDxOperations = XcmVersionedXcm.V4([
             XcmV4Instruction.ExchangeAsset({
                 give: XcmV4AssetAssetFilter.Definite([{
                     id: {
@@ -203,10 +279,95 @@ async function main() {
                 want: [usdtAsset],
                 maximal: true
             }),
-            XcmV4Instruction.DepositAsset({
+            XcmV4Instruction.InitiateReserveWithdraw({
                 assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                beneficiary: beneficiary(bobKeyPair)
+                reserve: assetHubDest,
+                xcm: [
+                    // Pay for Asset Hub execution with calculated fee
+                    XcmV4Instruction.BuyExecution({
+                        fees: {
+                            id: {
+                                parents: 1,
+                                interior: XcmV3Junctions.Here()
+                            },
+                            fun: XcmV3MultiassetFungibility.Fungible(ASSET_HUB_RETURN_FEE)
+                        },
+                        //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
+                        weight_limit: XcmV3WeightLimit.Unlimited()
+                    }),
+                    XcmV4Instruction.DepositAsset({
+                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        beneficiary: beneficiary(bobKeyPair)
+                    })
+                ]
             })
+        ]); */
+
+        const hydraDxOperations = XcmVersionedXcm.V4([
+            XcmV4Instruction.DepositReserveAsset({
+                assets: XcmV4AssetAssetFilter.Definite([{
+                    id: {
+                        parents: 1,
+                    interior: XcmV3Junctions.Here()
+                },
+                fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+            }]),
+            dest: hydradxDest,
+            xcm: [
+                // 2a. Pay for HydraDX execution with calculated fee
+                XcmV4Instruction.BuyExecution({
+                    fees: {
+                        id: {
+                            parents: 1,
+                            interior: XcmV3Junctions.Here()
+                        },
+                        fun: XcmV3MultiassetFungibility.Fungible(1000000000n)
+                    },
+                    // weight_limit: XcmV3WeightLimit.Limited(hydraDxWeight.value)
+                    weight_limit: XcmV3WeightLimit.Unlimited()
+                }),
+
+                // 2b. Exchange DOT for HDX
+                XcmV4Instruction.ExchangeAsset({
+                    give: XcmV4AssetAssetFilter.Definite([{
+                        id: {
+                            parents: 1,
+                            interior: XcmV3Junctions.Here()
+                        },
+                        fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                    }]),
+                    want: [usdtAsset],
+                    maximal: true
+                }),
+
+                // XcmV4Instruction.DepositAsset({
+                //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                //     beneficiary: beneficiary(bobKeyPair)
+                // })
+                // XcmV4Instruction.InitiateReserveWithdraw({
+                //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                //     reserve: assetHubDest,
+                //     xcm: [
+                //         // Pay for Asset Hub execution with calculated fee
+                //         XcmV4Instruction.BuyExecution({
+                //             fees: {
+                //                 id: {
+                //                     parents: 1,
+                //                     interior: XcmV3Junctions.Here()
+                //                 },
+                //                 fun: XcmV3MultiassetFungibility.Fungible(ASSET_HUB_RETURN_FEE)
+                //             },
+                //             //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
+                //             weight_limit: XcmV3WeightLimit.Unlimited()
+                //         }),
+                //         XcmV4Instruction.DepositAsset({
+                //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                //             beneficiary: beneficiary(bobKeyPair)
+                //         })
+                //     ]
+                // })
+            ]
+        })
         ]);
 
         // Calculate HydraDX execution weight and fees
@@ -224,8 +385,8 @@ async function main() {
         }
 
         // Calculate HydraDX delivery fees
-        const hydraDxDeliveryFee = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
-            XcmVersionedLocation.V3(assetHubDest),
+        const hydraDxDeliveryFee = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
+            XcmVersionedLocation.V4(hydradxDest),
             hydraDxOperations
         );
         if (!hydraDxDeliveryFee.success) {
@@ -233,18 +394,21 @@ async function main() {
         }
 
         // Apply buffer to HydraDX fees
-        const HYDRADX_EXECUTION_FEE = (BigInt(hydraDxFee.value.toString()) + BigInt(hydraDxDeliveryFee.value.toString())) * BUFFER_PERCENTAGE / 100n;
+        const hydraDxFeeValue = extractFeeBigInt(hydraDxFee.value);
+        // Use the execution fee as a baseline for delivery fee if not available
+        const hydraDxDeliveryFeeValue = extractDeliveryFee(hydraDxDeliveryFee.value, hydraDxFeeValue);
+        const HYDRADX_EXECUTION_FEE = (hydraDxFeeValue + hydraDxDeliveryFeeValue) * BUFFER_PERCENTAGE / 100n;
 
-        // Log all fee components
-        console.log("\nFee Breakdown:");
+        // Log all fee components with more detailed information
+        console.log("\nDetailed Fee Breakdown:");
         console.log("Asset Hub:");
-        console.log(`- Execution fee: ${Number(assetHubFee.value) / 1e10} DOT`);
-        console.log(`- Delivery fee: ${Number(assetHubDeliveryFee.value) / 1e10} DOT`);
-        console.log(`- Total with buffer: ${Number(ASSET_HUB_RETURN_FEE) / 1e10} DOT`);
+        console.log(`- Base execution fee: ${Number(assetHubFeeValue) / 1e10} DOT`);
+        console.log(`- Delivery fee: ${Number(assetHubDeliveryFeeValue) / 1e10} DOT`);
+        console.log(`- Total with ${Number(BUFFER_PERCENTAGE)}% buffer: ${Number(ASSET_HUB_RETURN_FEE) / 1e10} DOT`);
         console.log("\nHydraDX:");
-        console.log(`- Execution fee: ${Number(hydraDxFee.value) / 1e10} DOT`);
-        console.log(`- Delivery fee: ${Number(hydraDxDeliveryFee.value) / 1e10} DOT`);
-        console.log(`- Total with buffer: ${Number(HYDRADX_EXECUTION_FEE) / 1e10} DOT`);
+        console.log(`- Base execution fee: ${Number(hydraDxFeeValue) / 1e10} DOT`);
+        console.log(`- Delivery fee: ${Number(hydraDxDeliveryFeeValue) / 1e10} DOT`);
+        console.log(`- Total with ${Number(BUFFER_PERCENTAGE)}% buffer: ${Number(HYDRADX_EXECUTION_FEE) / 1e10} DOT`);
 
         // Calculate total amount needed including all fees
         const TOTAL_AMOUNT = TRANSFER_AMOUNT + HYDRADX_EXECUTION_FEE + ASSET_HUB_RETURN_FEE;
@@ -280,8 +444,8 @@ async function main() {
                             },
                             fun: XcmV3MultiassetFungibility.Fungible(HYDRADX_EXECUTION_FEE)
                         },
-                         weight_limit: XcmV3WeightLimit.Limited(hydraDxWeight.value)
-                        //weight_limit: XcmV3WeightLimit.Unlimited()
+                        // weight_limit: XcmV3WeightLimit.Limited(hydraDxWeight.value)
+                        weight_limit: XcmV3WeightLimit.Unlimited()
                     }),
 
                     // 2b. Exchange DOT for HDX
@@ -297,34 +461,34 @@ async function main() {
                         maximal: true
                     }),
 
-                    XcmV4Instruction.DepositAsset({
-                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                        beneficiary: beneficiary(bobKeyPair)
-                    })
+                    // XcmV4Instruction.DepositAsset({
+                    //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                    //     beneficiary: beneficiary(bobKeyPair)
+                    // })
 
                     // // 2c. Send swapped assets back to Asset Hub
-                    // XcmV4Instruction.InitiateReserveWithdraw({
-                    //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                    //     reserve: assetHubDest,
-                    //     xcm: [
-                    //         // Pay for Asset Hub execution with calculated fee
-                    //         XcmV4Instruction.BuyExecution({
-                    //             fees: {
-                    //                 id: {
-                    //                     parents: 1,
-                    //                     interior: XcmV3Junctions.Here()
-                    //                 },
-                    //                 fun: XcmV3MultiassetFungibility.Fungible(ASSET_HUB_RETURN_FEE)
-                    //             },
-                    //              weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
-                    //             //weight_limit: XcmV3WeightLimit.Unlimited()
-                    //         }),
-                    //         XcmV4Instruction.DepositAsset({
-                    //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                    //             beneficiary: beneficiary(bobKeyPair)
-                    //         })
-                    //     ]
-                    // })
+                    XcmV4Instruction.InitiateReserveWithdraw({
+                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        reserve: assetHubDest,
+                        xcm: [
+                            // Pay for Asset Hub execution with calculated fee
+                            XcmV4Instruction.BuyExecution({
+                                fees: {
+                                    id: {
+                                        parents: 1,
+                                        interior: XcmV3Junctions.Here()
+                                    },
+                                    fun: XcmV3MultiassetFungibility.Fungible(ASSET_HUB_RETURN_FEE)
+                                },
+                                //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
+                                weight_limit: XcmV3WeightLimit.Unlimited()
+                            }),
+                            XcmV4Instruction.DepositAsset({
+                                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                                beneficiary: beneficiary(bobKeyPair)
+                            })
+                        ]
+                    })
                 ]
             })
         ]);
