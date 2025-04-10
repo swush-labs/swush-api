@@ -151,14 +151,14 @@ async function main() {
 
         // Step 2: Calculate weights and fees for Asset Hub return operations
         console.log("Calculating Asset Hub return journey weights and fees...");
-        // const assetHubOperations = XcmVersionedXcm.V4([
-        //     XcmV4Instruction.DepositAsset({
-        //         assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-        //         beneficiary: beneficiary(bobKeyPair)
-        //     })
-        // ]);
-
         const assetHubOperations = XcmVersionedXcm.V4([
+            XcmV4Instruction.DepositAsset({
+                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                beneficiary: beneficiary(bobKeyPair)
+            })
+        ]);
+
+        const assetHubOperationsDelivery = XcmVersionedXcm.V4([
             XcmV4Instruction.InitiateReserveWithdraw({
                 assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
                 reserve: assetHubDest,
@@ -205,7 +205,7 @@ async function main() {
         // Calculate Asset Hub delivery fees
         const assetHubDeliveryFee = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
             XcmVersionedLocation.V4(assetHubDest),
-            assetHubOperations
+            assetHubOperationsDelivery
         );
         if (!assetHubDeliveryFee.success) {
             throw new Error("Failed to calculate Asset Hub delivery fees");
@@ -267,7 +267,7 @@ async function main() {
 
         // Step 1: Calculate weights and fees for HydraDX operations
         console.log("\nCalculating HydraDX execution weights and fees...");
-/*         const hydraDxOperations = XcmVersionedXcm.V4([
+        const hydraDxOperations = XcmVersionedXcm.V4([
             XcmV4Instruction.ExchangeAsset({
                 give: XcmV4AssetAssetFilter.Definite([{
                     id: {
@@ -301,9 +301,9 @@ async function main() {
                     })
                 ]
             })
-        ]); */
+        ]);
 
-        const hydraDxOperations = XcmVersionedXcm.V4([
+        const hydraDxOperationsDelivery = XcmVersionedXcm.V4([
             XcmV4Instruction.DepositReserveAsset({
                 assets: XcmV4AssetAssetFilter.Definite([{
                     id: {
@@ -387,7 +387,7 @@ async function main() {
         // Calculate HydraDX delivery fees
         const hydraDxDeliveryFee = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
             XcmVersionedLocation.V4(hydradxDest),
-            hydraDxOperations
+            hydraDxOperationsDelivery
         );
         if (!hydraDxDeliveryFee.success) {
             throw new Error("Failed to calculate HydraDX delivery fees");
