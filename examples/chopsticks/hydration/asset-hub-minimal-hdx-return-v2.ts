@@ -213,16 +213,14 @@ async function main() {
                         fees: dotFeeAsset,
                         weight_limit: XcmV3WeightLimit.Unlimited()
                     }),
-                    // // 2b. Exchange DOT for HDX
+                    
+                    // 2b. Exchange DOT for HDX
                     XcmV4Instruction.ExchangeAsset({
                         give: dotAssetSwapFilter,
                         want: [usdtAsset],
                         maximal: true
                     }),
-                    // XcmV4Instruction.DepositAsset({
-                    //     assets: XcmV4AssetAssetFilter.Wild(wildAllOf),
-                    //     beneficiary: beneficiary(bobKeyPair)
-                    // })
+                                    
                     // 2c. Send swapped assets (USDT) back to Asset Hub
                     XcmV4Instruction.InitiateReserveWithdraw({
                         // assets: XcmV4AssetAssetFilter.Definite([
