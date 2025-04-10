@@ -278,13 +278,14 @@ async function main() {
                 }]),
                 want: [usdtAsset],
                 maximal: true
-            }),
+            })
+            /*
             XcmV4Instruction.InitiateReserveWithdraw({
                 assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
                 reserve: assetHubDest,
                 xcm: [
                     // Pay for Asset Hub execution with calculated fee
-                    XcmV4Instruction.BuyExecution({
+                   XcmV4Instruction.BuyExecution({
                         fees: {
                             id: {
                                 parents: 1,
@@ -300,7 +301,7 @@ async function main() {
                         beneficiary: beneficiary(bobKeyPair)
                     })
                 ]
-            })
+            }) */
         ]);
 
         const hydraDxOperationsDelivery = XcmVersionedXcm.V4([
