@@ -277,22 +277,55 @@ async function main() {
             const fs = require("fs");
             //pretty print and save into a file using serializeKey
             fs.writeFileSync("dryRun.json", serializeKey(dryRun.value));
+
+            const { forwarded_xcms } = dryRun.value;
+
+            // Find the message targeting our desired parachain
+            const targetMessage = forwarded_xcms.find(([location, _]) =>
+                location.type === 'V4' &&
+                location.value.parents === 1 &&
+                location.value.interior.type === 'X1' &&
+                location.value.interior.value.type === 'Parachain' &&
+                location.value.interior.value.value === HYDRADX_PARA_ID
+            );
+
+            if (!targetMessage) {
+                throw new Error(`No forwarded message found for parachain ${HYDRADX_PARA_ID}`);
+            }
+
+            console.log("Target message found for parachain:", HYDRADX_PARA_ID);
+
+            // Extract the V3 XCM message
+            const [_, messages] = targetMessage;
+            const xcmMessage = messages[0];
+
+            const deliveryFeesResult = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
+                XcmVersionedLocation.V4(assetHubAddress),
+                xcmMessage);
+            console.log("Delivery fees:", deliveryFeesResult);
+
+            //pretty print and save into a file using serializeKey
+            fs.writeFileSync("deliveryFees.json", serializeKey(deliveryFeesResult));
+
+            // Query final weight for the complete message
+            console.log("\nPrint remote execution fees...");
+            const remoteXcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(xcmMessage);
+
+            if (!remoteXcmWeight.success) {
+                throw new Error("Failed to calculate total XCM weight");
+            }
+
+            console.log("XCM weight:", remoteXcmWeight);
+
+            const remoteXcmFee = await hydraDxApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+                remoteXcmWeight.value,
+                dotAssetId
+            );
+
+            console.log("Remote XCM fee:", remoteXcmFee);
         } else {
             console.error("Dry run failed:", dryRun);
             throw new Error("Dry run failed");
-        }
-
-        const dryRunXcm = await assetHubApi.apis.DryRunApi.dry_run_xcm(
-            XcmVersionedLocation.V4(assetHubAddress),
-            message
-        );
-        if (dryRunXcm.success) {
-            console.log("Dry run XCM successful");
-            const fs = require("fs");
-            //pretty print and save into a file using serializeKey
-            fs.writeFileSync("dryRunXcm.json", serializeKey(dryRunXcm.value));
-        } else {
-            console.error("Dry run XCM failed:", dryRunXcm);
         }
 
        /*  // Submit and watch the transaction
