@@ -55,6 +55,53 @@ const MAX_ASSETS = 1 // Maximum number of assets to transfer
 const BUFFER_PERCENTAGE = 120n // 20% buffer for fees
 
 // Helper function to safely extract fee value
+// function extractFeeValue(feeResult: any): bigint {
+//     if (!feeResult || typeof feeResult !== 'object') {
+//         throw new Error(`Invalid fee result: ${serializeKey(feeResult)}`);
+//     }
+
+//     // Handle XCM versioned assets (delivery fees)
+//     if (feeResult.type === 'V4' && Array.isArray(feeResult.value)) {
+//         return feeResult.value.reduce((sum: bigint, item: any) => {
+//             if (item && item.fun?.type === 'Fungible') {
+//                 return sum + BigInt(item.fun.value.toString());
+//             }
+//             return sum;
+//         }, 0n);
+//     }
+
+//     // Handle success/value pairs
+//     if ('success' in feeResult) {
+//         if (!feeResult.success) {
+//             throw new Error(`Fee calculation failed: ${serializeKey(feeResult)}`);
+//         }
+        
+//         // Handle nested value objects
+//         if (typeof feeResult.value === 'object' && 'value' in feeResult.value) {
+//             return BigInt(feeResult.value.value.toString());
+//         }
+        
+//         // Handle direct value
+//         return BigInt(feeResult.value.toString());
+//     }
+
+//     // Handle direct value
+//     if ('value' in feeResult) {
+//         if (typeof feeResult.value === 'object' && 'value' in feeResult.value) {
+//             return BigInt(feeResult.value.value.toString());
+//         }
+//         return BigInt(feeResult.value.toString());
+//     }
+
+//     // Handle case where feeResult itself is the value
+//     if (typeof feeResult === 'object' && 'toString' in feeResult) {
+//         return BigInt(feeResult.toString());
+//     }
+
+//     console.log("Problematic fee result:", serializeKey(feeResult));
+//     throw new Error(`Unexpected fee result structure: ${JSON.stringify(feeResult)}`);
+// }
+
 function extractFeeValue(feeResult: any): bigint {
     if (!feeResult || !feeResult.success) {
         throw new Error(`Fee calculation was not successful: ${JSON.stringify(feeResult)}`);
@@ -85,25 +132,10 @@ function extractFeeValue(feeResult: any): bigint {
 }
 
 async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, hydraDxApi: TypedApi<typeof hydration>,
- dotAssetId: any): Promise<Fees> {
+ dotAssetId: any, beneficiaryKeyPair: KeyPair, ALICE: string): Promise<Fees> {
     try {
-        // Create locations and asset definitions
-        const hydradxDest = {
-            parents: 1,
-            interior: XcmV3Junctions.X1(
-                XcmV3Junction.Parachain(HYDRADX_PARA_ID)
-            )
-        };
-
-        const assetHubAddress = {
-            parents: 1,
-            interior: XcmV3Junctions.X1(
-                XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-            )
-        };
-
-        // Create a basic message to calculate initial fees
-        const initialMessage = XcmVersionedXcm.V4([
+        // First create the initial message with placeholder fees
+        const message = XcmVersionedXcm.V4([
             XcmV4Instruction.WithdrawAsset([{
                 id: {
                     parents: 1,
@@ -111,101 +143,239 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
                 },
                 fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
             }]),
-            XcmV4Instruction.BuyExecution({
-                fees: {
+            XcmV4Instruction.DepositReserveAsset({
+                assets: XcmV4AssetAssetFilter.Definite([{
                     id: {
                         parents: 1,
                         interior: XcmV3Junctions.Here()
                     },
                     fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                }]),
+                dest: {
+                    parents: 1,
+                    interior: XcmV3Junctions.X1(
+                        XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+                    )
                 },
-                weight_limit: XcmV3WeightLimit.Unlimited()
+                xcm: [
+                    XcmV4Instruction.BuyExecution({
+                        fees: {
+                            id: {
+                                parents: 1,
+                                interior: XcmV3Junctions.Here()
+                            },
+                            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                        },
+                        weight_limit: XcmV3WeightLimit.Unlimited()
+                    }),
+                    XcmV4Instruction.ExchangeAsset({
+                        give: XcmV4AssetAssetFilter.Definite([{
+                            id: {
+                                parents: 1,
+                                interior: XcmV3Junctions.Here()
+                            },
+                            fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                        }]),
+                        want: [{
+                            id: {
+                                parents: 1,
+                                interior: XcmV3Junctions.X3([
+                                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID),
+                                    XcmV3Junction.PalletInstance(50),
+                                    XcmV3Junction.GeneralIndex(BigInt(1984))
+                                ])
+                            },
+                            fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000))
+                        }],
+                        maximal: true
+                    }),
+                    XcmV4Instruction.InitiateReserveWithdraw({
+                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        reserve: {
+                            parents: 1,
+                            interior: XcmV3Junctions.X1(
+                                XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+                            )
+                        },
+                        xcm: [
+                            XcmV4Instruction.BuyExecution({
+                                fees: {
+                                    id: {
+                                        parents: 1,
+                                        interior: XcmV3Junctions.Here()
+                                    },
+                                    fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                                },
+                                weight_limit: XcmV3WeightLimit.Unlimited()
+                            }),
+                            XcmV4Instruction.DepositAsset({
+                                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                                beneficiary: {
+                                    parents: 0,
+                                    interior: XcmV3Junctions.X1(
+                                        XcmV3Junction.AccountId32({
+                                            network: undefined,
+                                            id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                                        })
+                                    )
+                                }
+                            })
+                        ]
+                    })
+                ]
             })
         ]);
 
-        // Calculate initial execution fees on Asset Hub
-        console.log("\nCalculating initial execution fees on Asset Hub...");
-        const initialWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(initialMessage);
-        if (!initialWeight.success) {
-            throw new Error("Failed to calculate initial execution weight");
+        // Calculate initial weight for the complete message
+        const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
+        if (!xcmWeight.success) {
+            throw new Error("Failed to calculate total XCM weight");
         }
-        
-        const initialExecutionFeeResult = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
-            initialWeight.value,
+
+        // Create the transaction
+        const tx = assetHubApi.tx.PolkadotXcm.execute({
+            message: message,
+            max_weight: {
+                ref_time: xcmWeight.value.ref_time,
+                proof_size: xcmWeight.value.proof_size
+            }
+        });
+
+        // Do a dry run to get the actual forwarded messages
+        const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
+            PolkadotRuntimeOriginCaller.system({
+                type: "Signed",
+                value: ALICE
+            }),
+            tx.decodedCall,
+            {}
+        );
+
+        if (!dryRun.success) {
+            throw new Error("Dry run failed");
+        }
+
+        const { forwarded_xcms } = dryRun.value;
+
+        // Find the message targeting HydraDX
+        const targetMessage = forwarded_xcms.find(([location, _]) =>
+            location.type === 'V4' &&
+            location.value.parents === 1 &&
+            location.value.interior.type === 'X1' &&
+            location.value.interior.value.type === 'Parachain' &&
+            location.value.interior.value.value === HYDRADX_PARA_ID
+        );
+
+        if (!targetMessage) {
+            throw new Error(`No forwarded message found for parachain ${HYDRADX_PARA_ID}`);
+        }
+
+        // Extract the XCM message
+        const [_, messages] = targetMessage;
+        const xcmMessage = messages[0];
+
+        // Calculate initial execution fee
+        const xcmFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+            xcmWeight.value,
             dotAssetId
         );
-        const initialExecutionFee = extractFeeValue(initialExecutionFeeResult);
+        console.log("Initial execution fee result:", serializeKey(xcmFee));
+        const initialExecutionFee = extractFeeValue(xcmFee);
 
         // Calculate delivery fees to HydraDX
-        console.log("\nCalculating delivery fees to HydraDX...");
         const deliveryFeesResult = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
-            XcmVersionedLocation.V4(hydradxDest),
-            initialMessage
+            XcmVersionedLocation.V4({
+                parents: 1,
+                interior: XcmV3Junctions.X1(
+                    XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+                )
+            }),
+            xcmMessage
         );
+        console.log("Delivery fees result:", serializeKey(deliveryFeesResult));
         const deliveryFees = extractFeeValue(deliveryFeesResult);
 
-        // Calculate execution fees on HydraDX
-        console.log("\nCalculating execution fees on HydraDX...");
-        const hydraDxWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(initialMessage);
-        if (!hydraDxWeight.success) {
+        // Calculate HydraDX execution fees
+        const remoteXcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(xcmMessage);
+        if (!remoteXcmWeight.success) {
             throw new Error("Failed to calculate HydraDX execution weight");
         }
-        
-        const hydraDxExecutionFeeResult = await hydraDxApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
-            hydraDxWeight.value,
+
+        const remoteXcmFee = await hydraDxApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+            remoteXcmWeight.value,
             dotAssetId
         );
-        const hydraDxExecutionFee = extractFeeValue(hydraDxExecutionFeeResult);
+        console.log("HydraDX execution fee result:", serializeKey(remoteXcmFee));
+        const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
 
-        // Calculate return journey fees
-        const returnMessage = XcmVersionedXcm.V4([
-            XcmV4Instruction.BuyExecution({
-                fees: {
-                    id: {
-                        parents: 1,
-                        interior: XcmV3Junctions.Here()
-                    },
-                    fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
-                },
-                weight_limit: XcmV3WeightLimit.Unlimited()
-            }),
-            XcmV4Instruction.DepositAsset({
-                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                beneficiary: {
-                    parents: 0,
-                    interior: XcmV3Junctions.Here()
-                }
-            })
-        ]);
+        // Extract return journey message
+        const returnJourneyMessage = xcmMessage.value.find(instruction => 
+            instruction.type === 'InitiateReserveWithdraw'
+        );
+
+        if (!returnJourneyMessage) {
+            throw new Error('No return journey message found');
+        }
+
+        // Convert instructions to V4 format for return journey
+        const v4Instructions = returnJourneyMessage.value.xcm.map(instruction => {
+            if (instruction.type === 'BuyExecution') {
+                return {
+                    type: 'BuyExecution',
+                    value: {
+                        fees: {
+                            id: {
+                                parents: instruction.value.fees.id.value.parents,
+                                interior: instruction.value.fees.id.value.interior.type === 'Here' 
+                                    ? XcmV3Junctions.Here()
+                                    : instruction.value.fees.id.value.interior
+                            },
+                            fun: XcmV3MultiassetFungibility.Fungible(BigInt(instruction.value.fees.fun.value))
+                        },
+                        weight_limit: XcmV3WeightLimit.Unlimited()
+                    }
+                };
+            } else if (instruction.type === 'DepositAsset') {
+                return {
+                    type: 'DepositAsset',
+                    value: {
+                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        beneficiary: {
+                            parents: instruction.value.beneficiary.parents,
+                            interior: instruction.value.beneficiary.interior
+                        }
+                    }
+                };
+            }
+            return instruction;
+        });
 
         // Calculate return delivery fees
-        console.log("\nCalculating return delivery fees...");
         const returnDeliveryFeesResult = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
-            XcmVersionedLocation.V4(assetHubAddress),
-            returnMessage
+            XcmVersionedLocation.V4({
+                parents: 1,
+                interior: XcmV3Junctions.X1(
+                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+                )
+            }),
+            XcmVersionedXcm.V4(v4Instructions)
         );
         const returnDeliveryFees = extractFeeValue(returnDeliveryFeesResult);
 
-        // Calculate final execution fees on Asset Hub
-        console.log("\nCalculating final execution fees on Asset Hub...");
-        const finalWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(returnMessage);
-        if (!finalWeight.success) {
-            throw new Error("Failed to calculate final execution weight");
+        // Calculate final Asset Hub execution fees
+        const finalAssetHubWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(
+            XcmVersionedXcm.V4(v4Instructions)
+        );
+
+        if (!finalAssetHubWeight.success) {
+            throw new Error("Failed to calculate final Asset Hub execution weight");
         }
-        
-        const finalExecutionFeeResult = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
-            finalWeight.value,
+
+        const finalAssetHubFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+            finalAssetHubWeight.value,
             dotAssetId
         );
-        const finalExecutionFee = extractFeeValue(finalExecutionFeeResult);
-
-        // Log fee values
-        console.log("\nFee values (BigInt):");
-        console.log("Initial Execution Fee:", initialExecutionFee.toString());
-        console.log("Delivery Fees:", deliveryFees.toString());
-        console.log("HydraDX Execution Fee:", hydraDxExecutionFee.toString());
-        console.log("Return Delivery Fees:", returnDeliveryFees.toString());
-        console.log("Final Execution Fee:", finalExecutionFee.toString());
+        const finalExecutionFee = extractFeeValue(finalAssetHubFee);
 
         return {
             initial_execution: initialExecutionFee,
@@ -213,7 +383,7 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
             hydradx_execution: hydraDxExecutionFee,
             return_delivery: returnDeliveryFees,
             final_execution: finalExecutionFee,
-            initial_weight: initialWeight.value
+            initial_weight: xcmWeight.value
         };
     } catch (error) {
         console.error("Error in calculateFees:", error);
@@ -223,11 +393,11 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
 
 async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
     // Calculate total fees with buffer
-    const totalFees = BigInt(fees.initial_execution) + 
-                     BigInt(fees.initial_delivery) + 
-                     BigInt(fees.hydradx_execution) + 
-                     BigInt(fees.return_delivery) + 
-                     BigInt(fees.final_execution);
+    const totalFees = fees.initial_execution + 
+                     fees.initial_delivery + 
+                     fees.hydradx_execution + 
+                     fees.return_delivery + 
+                     fees.final_execution;
     
     const totalFeesWithBuffer = (totalFees * BUFFER_PERCENTAGE) / 100n;
     const withdrawAmount = TRANSFER_AMOUNT + totalFeesWithBuffer;
@@ -381,7 +551,7 @@ async function main() {
 
         // Calculate all fees
         console.log("\nCalculating fees...");
-        const fees = await calculateFees(assetHubApi, hydraDxApi, dotAssetId);
+        const fees = await calculateFees(assetHubApi, hydraDxApi, dotAssetId, bobKeyPair, ALICE);
         console.log("\nFees calculated:", fees);
 
         // Construct XCM message with dynamic fees
