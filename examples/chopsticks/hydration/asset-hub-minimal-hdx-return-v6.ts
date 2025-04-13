@@ -284,49 +284,6 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
         console.log("HydraDX execution fee result:", serializeKey(remoteXcmFee));
         const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
 
-        //   // Extract return journey message
-        //     const returnJourneyMessage = xcmMessage.value.find(instruction => 
-        //         instruction.type === 'InitiateReserveWithdraw'
-        //     );
-
-        //     if (!returnJourneyMessage) {
-        //         throw new Error('No return journey message found');
-        //     }
-
-        //     // Convert instructions to V4 format for return journey
-        //     const v4Instructions = returnJourneyMessage.value.xcm.map(instruction => {
-        //         if (instruction.type === 'BuyExecution') {
-        //             return {
-        //                 type: 'BuyExecution',
-        //                 value: {
-        //                     fees: {
-        //                         id: {
-        //                             parents: instruction.value.fees.id.value.parents,
-        //                             interior: instruction.value.fees.id.value.interior.type === 'Here' 
-        //                                 ? XcmV3Junctions.Here()
-        //                                 : instruction.value.fees.id.value.interior
-        //                         },
-        //                         fun: XcmV3MultiassetFungibility.Fungible(BigInt(instruction.value.fees.fun.value))
-        //                     },
-        //                     weight_limit: XcmV3WeightLimit.Unlimited()
-        //                 }
-        //             };
-        //         } else if (instruction.type === 'DepositAsset') {
-        //             return {
-        //                 type: 'DepositAsset',
-        //                 value: {
-        //                     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-        //                     beneficiary: {
-        //                         parents: instruction.value.beneficiary.parents,
-        //                         interior: instruction.value.beneficiary.interior
-        //                     }
-        //                 }
-        //             };
-        //         }
-        //         return instruction;
-        //     });
-
-
         const v4Instructions = XcmVersionedXcm.V4([
             XcmV4Instruction.InitiateReserveWithdraw({
                 assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
