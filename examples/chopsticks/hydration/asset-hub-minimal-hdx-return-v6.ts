@@ -52,7 +52,7 @@ const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
 const ASSET_HUB_PARA_ID = 1000 // Asset Hub parachain ID
 const SLIPPAGE_TOLERANCE = 5 // 5% slippage tolerance
 const MAX_ASSETS = 1 // Maximum number of assets to transfer
-const BUFFER_PERCENTAGE = 120n // 20% buffer for fees
+const BUFFER_PERCENTAGE = 100n // 20% buffer for fees
 
 // Helper function to safely extract fee value
 function extractFeeValue(feeResult: any): bigint {
@@ -385,19 +385,44 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
         fees.return_delivery +
         fees.final_execution;
 
-    const totalFeesWithBuffer = (totalFees * BUFFER_PERCENTAGE) / 100n;
-    const withdrawAmount = TRANSFER_AMOUNT + totalFeesWithBuffer;
+    // const totalFeesWithBuffer = (totalFees * BUFFER_PERCENTAGE) / 100n;
+    const withdrawAmount = TRANSFER_AMOUNT + totalFees;
 
-    // Log fee breakdown for debugging
-    console.log("\nFee Breakdown (in planck):");
-    console.log("Initial Execution:", fees.initial_execution.toString());
-    console.log("Initial Delivery:", fees.initial_delivery.toString());
-    console.log("HydraDX Execution:", fees.hydradx_execution.toString());
-    console.log("Return Delivery:", fees.return_delivery.toString());
-    console.log("Final Execution:", fees.final_execution.toString());
-    console.log("Total Fees:", totalFees.toString());
-    console.log("Total Fees with Buffer:", totalFeesWithBuffer.toString());
-    console.log("Total Withdraw Amount:", withdrawAmount.toString());
+    // Helper function to format planck to DOT
+    const formatDOT = (planck: bigint) => {
+        const dot = Number(planck) / 1e10;
+        return dot.toFixed(8);
+    };
+
+    // Log detailed fee breakdown
+    console.log("\n=== Fee Breakdown ===");
+    console.log("Initial Execution Fee:");
+    console.log(`  ${formatDOT(fees.initial_execution)} DOT`);
+
+    console.log("\nInitial Delivery Fee:");
+    console.log(`  ${formatDOT(fees.initial_delivery)} DOT`);
+
+    console.log("\nHydraDX Execution Fee:");
+    console.log(`  ${formatDOT(fees.hydradx_execution)} DOT`);
+
+    console.log("\nReturn Delivery Fee:");
+    console.log(`  ${formatDOT(fees.return_delivery)} DOT`);
+
+    console.log("\nFinal Execution Fee:");
+    console.log(`  ${formatDOT(fees.final_execution)} DOT`);
+
+    console.log("\n=== Totals ===");
+    console.log("Total Base Fees:");
+    console.log(`  ${formatDOT(totalFees)} DOT`);
+
+    // console.log("\nTotal Fees with Buffer:");
+    // console.log(`  ${formatDOT(totalFeesWithBuffer)} DOT`);
+
+    console.log("\nTransfer Amount:");
+    console.log(`  ${formatDOT(TRANSFER_AMOUNT)} DOT`);
+
+    console.log("\nTotal Withdraw Amount (Transfer + Fees with Buffer):");
+    console.log(`  ${formatDOT(withdrawAmount)} DOT`);
 
     // Construct the complete XCM message with calculated fees
     return XcmVersionedXcm.V4([
