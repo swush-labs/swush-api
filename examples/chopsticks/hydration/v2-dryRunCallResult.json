@@ -1,0 +1,1 @@
+{"success":true,"value":{"execution_result":{"success":false,"value":{"post_info":{"actual_weight":{"ref_time":"18460000","proof_size":"0"},"pays_fee":{"type":"Yes"}},"error":{"type":"Module","value":{"type":"PolkadotXcm","value":{"type":"LocalExecutionIncomplete"}}}}},"emitted_events":[],"forwarded_xcms":[]}}
