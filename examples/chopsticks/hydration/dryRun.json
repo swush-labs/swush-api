@@ -1,0 +1,394 @@
+{
+    "execution_result": {
+        "success": true,
+        "value": {
+            "actual_weight": {
+                "ref_time": "763241000",
+                "proof_size": "9789"
+            },
+            "pays_fee": {
+                "type": "Yes"
+            }
+        }
+    },
+    "emitted_events": [
+        {
+            "type": "Balances",
+            "value": {
+                "type": "Upgraded",
+                "value": {
+                    "who": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5"
+                }
+            }
+        },
+        {
+            "type": "Balances",
+            "value": {
+                "type": "Burned",
+                "value": {
+                    "who": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+                    "amount": "200000000000"
+                }
+            }
+        },
+        {
+            "type": "Balances",
+            "value": {
+                "type": "Minted",
+                "value": {
+                    "who": "13cKp89Uh2yWgTG28JA1QEvPUMjEPKejqkjHKf9zqLiFKjH6",
+                    "amount": "199693750000"
+                }
+            }
+        },
+        {
+            "type": "Balances",
+            "value": {
+                "type": "Minted",
+                "value": {
+                    "who": "14xmwinmCEz6oRrFdczHKqHgWNMiCysE2KrA4jXXAAM1Eogk",
+                    "amount": "306250000"
+                }
+            }
+        },
+        {
+            "type": "XcmpQueue",
+            "value": {
+                "type": "XcmpMessageSent",
+                "value": {
+                    "message_hash": {}
+                }
+            }
+        },
+        {
+            "type": "Balances",
+            "value": {
+                "type": "Issued",
+                "value": {
+                    "amount": "0"
+                }
+            }
+        },
+        {
+            "type": "PolkadotXcm",
+            "value": {
+                "type": "Attempted",
+                "value": {
+                    "outcome": {
+                        "type": "Complete",
+                        "value": {
+                            "used": {
+                                "ref_time": "749171000",
+                                "proof_size": "9789"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "local_xcm": {
+        "type": "V4",
+        "value": [
+            {
+                "type": "WithdrawAsset",
+                "value": [
+                    {
+                        "id": {
+                            "parents": 1,
+                            "interior": {
+                                "type": "Here"
+                            }
+                        },
+                        "fun": {
+                            "type": "Fungible",
+                            "value": "200000000000"
+                        }
+                    }
+                ]
+            },
+            {
+                "type": "DepositReserveAsset",
+                "value": {
+                    "assets": {
+                        "type": "Definite",
+                        "value": [
+                            {
+                                "id": {
+                                    "parents": 1,
+                                    "interior": {
+                                        "type": "Here"
+                                    }
+                                },
+                                "fun": {
+                                    "type": "Fungible",
+                                    "value": "200000000000"
+                                }
+                            }
+                        ]
+                    },
+                    "dest": {
+                        "parents": 1,
+                        "interior": {
+                            "type": "X1",
+                            "value": {
+                                "type": "Parachain",
+                                "value": 2034
+                            }
+                        }
+                    },
+                    "xcm": [
+                        {
+                            "type": "BuyExecution",
+                            "value": {
+                                "fees": {
+                                    "id": {
+                                        "parents": 1,
+                                        "interior": {
+                                            "type": "Here"
+                                        }
+                                    },
+                                    "fun": {
+                                        "type": "Fungible",
+                                        "value": "200000000000"
+                                    }
+                                },
+                                "weight_limit": {
+                                    "type": "Unlimited"
+                                }
+                            }
+                        },
+                        {
+                            "type": "ExchangeAsset",
+                            "value": {
+                                "give": {
+                                    "type": "Definite",
+                                    "value": [
+                                        {
+                                            "id": {
+                                                "parents": 1,
+                                                "interior": {
+                                                    "type": "Here"
+                                                }
+                                            },
+                                            "fun": {
+                                                "type": "Fungible",
+                                                "value": "200000000000"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "want": [
+                                    {
+                                        "id": {
+                                            "parents": 1,
+                                            "interior": {
+                                                "type": "X3",
+                                                "value": [
+                                                    {
+                                                        "type": "Parachain",
+                                                        "value": 1000
+                                                    },
+                                                    {
+                                                        "type": "PalletInstance",
+                                                        "value": 50
+                                                    },
+                                                    {
+                                                        "type": "GeneralIndex",
+                                                        "value": "1984"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "fun": {
+                                            "type": "Fungible",
+                                            "value": "5000000"
+                                        }
+                                    }
+                                ],
+                                "maximal": true
+                            }
+                        },
+                        {
+                            "type": "DepositAsset",
+                            "value": {
+                                "assets": {
+                                    "type": "Wild",
+                                    "value": {
+                                        "type": "All"
+                                    }
+                                },
+                                "beneficiary": {
+                                    "parents": 0,
+                                    "interior": {
+                                        "type": "X1",
+                                        "value": {
+                                            "type": "AccountId32",
+                                            "value": {
+                                                "id": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "forwarded_xcms": [
+        [
+            {
+                "type": "V4",
+                "value": {
+                    "parents": 1,
+                    "interior": {
+                        "type": "X1",
+                        "value": {
+                            "type": "Parachain",
+                            "value": 2034
+                        }
+                    }
+                }
+            },
+            [
+                {
+                    "type": "V3",
+                    "value": [
+                        {
+                            "type": "ReserveAssetDeposited",
+                            "value": [
+                                {
+                                    "id": {
+                                        "type": "Concrete",
+                                        "value": {
+                                            "parents": 1,
+                                            "interior": {
+                                                "type": "Here"
+                                            }
+                                        }
+                                    },
+                                    "fun": {
+                                        "type": "Fungible",
+                                        "value": "199693750000"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ClearOrigin"
+                        },
+                        {
+                            "type": "BuyExecution",
+                            "value": {
+                                "fees": {
+                                    "id": {
+                                        "type": "Concrete",
+                                        "value": {
+                                            "parents": 1,
+                                            "interior": {
+                                                "type": "Here"
+                                            }
+                                        }
+                                    },
+                                    "fun": {
+                                        "type": "Fungible",
+                                        "value": "200000000000"
+                                    }
+                                },
+                                "weight_limit": {
+                                    "type": "Unlimited"
+                                }
+                            }
+                        },
+                        {
+                            "type": "ExchangeAsset",
+                            "value": {
+                                "give": {
+                                    "type": "Definite",
+                                    "value": [
+                                        {
+                                            "id": {
+                                                "type": "Concrete",
+                                                "value": {
+                                                    "parents": 1,
+                                                    "interior": {
+                                                        "type": "Here"
+                                                    }
+                                                }
+                                            },
+                                            "fun": {
+                                                "type": "Fungible",
+                                                "value": "200000000000"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "want": [
+                                    {
+                                        "id": {
+                                            "type": "Concrete",
+                                            "value": {
+                                                "parents": 1,
+                                                "interior": {
+                                                    "type": "X3",
+                                                    "value": [
+                                                        {
+                                                            "type": "Parachain",
+                                                            "value": 1000
+                                                        },
+                                                        {
+                                                            "type": "PalletInstance",
+                                                            "value": 50
+                                                        },
+                                                        {
+                                                            "type": "GeneralIndex",
+                                                            "value": "1984"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "fun": {
+                                            "type": "Fungible",
+                                            "value": "5000000"
+                                        }
+                                    }
+                                ],
+                                "maximal": true
+                            }
+                        },
+                        {
+                            "type": "DepositAsset",
+                            "value": {
+                                "assets": {
+                                    "type": "Wild",
+                                    "value": {
+                                        "type": "All"
+                                    }
+                                },
+                                "beneficiary": {
+                                    "parents": 0,
+                                    "interior": {
+                                        "type": "X1",
+                                        "value": {
+                                            "type": "AccountId32",
+                                            "value": {
+                                                "id": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "SetTopic",
+                            "value": {}
+                        }
+                    ]
+                }
+            ]
+        ]
+    ]
+}

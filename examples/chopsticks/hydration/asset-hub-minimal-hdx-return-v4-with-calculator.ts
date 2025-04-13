@@ -26,6 +26,8 @@ import {
 } from "@polkadot-api/descriptors";
 import { Binary } from "polkadot-api";
 import { XcmFeeCalculator } from "./XcmFeeCalculator";
+import { DryRunUtils } from './utils/DryRunUtils';
+import { DOT_ASSET_ID } from './constants';
 
 // Constants
 const TRANSFER_AMOUNT = 200_000_000_000n; // 20 DOT in planck units
@@ -150,7 +152,7 @@ async function main() {
                                         parents: 1,
                                         interior: XcmV3Junctions.Here()
                                     },
-                                    fun: XcmV3MultiassetFungibility.Fungible(0n) // Will be updated
+                                    fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT) // Will be updated
                                 },
                                 weight_limit: XcmV3WeightLimit.Unlimited()
                             }),
@@ -165,85 +167,86 @@ async function main() {
         ]);
 
         // Initialize fee calculator
-        const feeCalculator = new XcmFeeCalculator(
-            assetHubApi,
-            hydraDxApi,
-            { bufferPercentage: BUFFER_PERCENTAGE }
-        );
+        // const feeCalculator = new XcmFeeCalculator(
+        //     assetHubApi,
+        //     hydraDxApi,
+        //     { bufferPercentage: BUFFER_PERCENTAGE }
+        // );
+
+        // Initialize DryRunUtils
+        const dryRunUtils = new DryRunUtils(assetHubApi, Number(BUFFER_PERCENTAGE));
+
+        // Create origin location for Asset Hub
+        const assetHubOrigin = XcmVersionedLocation.V4({
+            parents: 1,
+            interior: XcmV3Junctions.X1(
+                XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+            )
+        });
 
         // Calculate fees and update message
         console.log("\nCalculating fees and updating message...");
-        const fees = await feeCalculator.calculateMultiHopFees(
-            message,
-            XcmVersionedLocation.V4({
-                parents: 0,
-                interior: XcmV3Junctions.X1(
-                    XcmV3Junction.AccountId32({
-                        network: undefined,
-                        id: Binary.fromBytes(aliceKeyPair.publicKey)
-                    })
-                )
-            }),
-            HYDRADX_PARA_ID,
-            ASSET_HUB_PARA_ID);
+        // const fees = await feeCalculator.calculateMultiHopFees(
+        //     message,
+        //     XcmVersionedLocation.V4({
+        //         parents: 0,
+        //         interior: XcmV3Junctions.X1(
+        //             XcmV3Junction.AccountId32({
+        //                 network: undefined,
+        //                 id: Binary.fromBytes(aliceKeyPair.publicKey)
+        //             })
+        //         )
+        //     }),
+        //     HYDRADX_PARA_ID,
+        //     ASSET_HUB_PARA_ID
+        // );
 
-        console.log("Fees:", fees);
-        
-/*         const { updatedMessage, fees } = await feeCalculator.calculateFeesAndUpdateMessage(
+        // console.log("Fees:", fees);
+
+        // Perform dry run for the XCM message
+        const dryRunResult = await dryRunUtils.dryRunXcmMessage(
+            assetHubOrigin,
             message,
-            XcmVersionedLocation.V4({
-                parents: 0,
-                interior: XcmV3Junctions.X1(
-                    XcmV3Junction.AccountId32({
-                        network: undefined,
-                        id: Binary.fromBytes(aliceKeyPair.publicKey)
-                    })
-                )
-            }),
-            HYDRADX_PARA_ID,
-            ASSET_HUB_PARA_ID
+            "Asset Hub to HydraDX Transfer"
         );
 
-        // Log fee breakdown
-        console.log("\nFee Breakdown:");
-        console.log("First Hop (Asset Hub -> HydraDX):");
-        console.log(`- Execution Fee: ${Number(fees.firstHopFees.executionFee) / 1e10} DOT`);
-        console.log(`- Delivery Fee: ${Number(fees.firstHopFees.deliveryFee) / 1e10} DOT`);
-        console.log(`- Total with Buffer: ${Number(fees.firstHopFees.totalWithBuffer) / 1e10} DOT`);
-        
-        console.log("\nReturn Hop (HydraDX -> Asset Hub):");
-        console.log(`- Execution Fee: ${Number(fees.returnHopFees.executionFee) / 1e10} DOT`);
-        console.log(`- Delivery Fee: ${Number(fees.returnHopFees.deliveryFee) / 1e10} DOT`);
-        console.log(`- Total with Buffer: ${Number(fees.returnHopFees.totalWithBuffer) / 1e10} DOT`);
-        
-        console.log("\nTotal Fees Required:", Number(fees.totalFeesRequired) / 1e10, "DOT");
+        console.log("Dry run result:", dryRunResult);
 
-        // Execute XCM message
+      /*   // Validate dry run results
+        const { isValid, details, warnings } = dryRunUtils.validateDryRunResult(dryRunResult);
+        
+        if (!isValid) {
+            console.error("Dry run validation failed:", details);
+            if (warnings.length > 0) {
+                console.warn("Warnings:", warnings);
+            }
+            throw new Error("Dry run validation failed");
+        }
+
+        if (warnings.length > 0) {
+            console.warn("Warnings:", warnings);
+        }
+
+        // Estimate XCM fees
+        const xcmFees = await dryRunUtils.estimateXcmFees(message, DOT_ASSET_ID);
+        if (!xcmFees) {
+            throw new Error("Failed to estimate XCM fees");
+        }
+
+        console.log("\nFee Breakdown:");
+        console.log(`- Execution Fee: ${Number(xcmFees.executionFee) / 1e10} DOT`);
+        console.log(`- Delivery Fee: ${Number(xcmFees.deliveryFee) / 1e10} DOT`);
+        console.log(`- Total with Buffer: ${Number(xcmFees.totalWithBuffer) / 1e10} DOT`);
+ */
+      /*   // Execute XCM message
         console.log("\nExecuting XCM message...");
         const tx = assetHubApi.tx.PolkadotXcm.execute({
-            message: updatedMessage,
+            message: message,
             max_weight: {
                 ref_time: 10000000000n,
                 proof_size: 100000n
             }
         });
-
-        // Dry run the transaction
-        const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
-            PolkadotRuntimeOriginCaller.system({
-                type: "Signed",
-                value: ALICE
-            }),
-            tx.decodedCall,
-            {}
-        );
-
-        if (!dryRun.success) {
-            console.error("Dry run failed:", dryRun);
-            throw new Error("Dry run failed");
-        }
-
-        console.log("Dry run successful, submitting transaction...");
 
         // Submit and watch the transaction
         await TransactionService.submitAndWatch(tx, alice, {
@@ -266,8 +269,7 @@ async function main() {
         console.log('\nFinal Balance on Asset Hub:');
         console.log(`Alice DOT: ${Number(finalBalance.data.free) / 1e10} DOT`);
         console.log(`Total DOT spent: ${Number(initialBalance.data.free - finalBalance.data.free) / 1e10} DOT`);
- */
-    } catch (error) {
+    */ } catch (error) {
         console.error('Error:', error);
     } finally {
         assetHubClient.destroy();
