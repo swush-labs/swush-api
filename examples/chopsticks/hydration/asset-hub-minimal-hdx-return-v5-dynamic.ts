@@ -388,15 +388,20 @@ async function main() {
         console.log("\nConstructing XCM message with dynamic fees...");
         const message = await constructXcmMessage(fees, bobKeyPair);
 
+        //calculate weights for ref_time and proof_size
+        const weights = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
         // Execute XCM message
         console.log("\nExecuting XCM message...");
-        const tx = assetHubApi.tx.PolkadotXcm.execute({
-            message: message,
-            max_weight: {
-                ref_time: fees.initial_weight.ref_time,
-                proof_size: fees.initial_weight.proof_size
-            }
-        });
+
+        if (weights.success) {
+            const tx = assetHubApi.tx.PolkadotXcm.execute({
+                message: message,
+                max_weight: {
+                    ref_time: weights.value.ref_time,
+                    proof_size: weights.value.proof_size
+                }
+            });
+
 
         // Dry run the transaction
         const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
@@ -428,6 +433,7 @@ async function main() {
                 console.log('Transaction status:', status);
             }
         });
+    }
 
 
     } catch (error) {
