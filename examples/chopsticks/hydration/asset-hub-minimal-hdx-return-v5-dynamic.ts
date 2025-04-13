@@ -284,7 +284,7 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
         console.log("HydraDX execution fee result:", serializeKey(remoteXcmFee));
         const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
 
-        // Extract return journey message
+    /*     // Extract return journey message
         const returnJourneyMessage = xcmMessage.value.find(instruction => 
             instruction.type === 'InitiateReserveWithdraw'
         );
@@ -363,13 +363,13 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
             dotAssetId
         );
         const finalExecutionFee = extractFeeValue(finalAssetHubFee);
-
+ */
         return {
             initial_execution: initialExecutionFee,
             initial_delivery: deliveryFees,
             hydradx_execution: hydraDxExecutionFee,
-            return_delivery: returnDeliveryFees,
-            final_execution: finalExecutionFee,
+            return_delivery: 0n,
+            final_execution: 0n,
             initial_weight: xcmWeight.value
         };
     } catch (error) {
