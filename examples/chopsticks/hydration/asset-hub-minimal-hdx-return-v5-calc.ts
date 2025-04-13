@@ -327,33 +327,91 @@ async function main() {
 
             console.log("Remote XCM fee:", remoteXcmFee);
 
-            /*       // Execute XCM message
-                  console.log("Executing XCM message...");
-                  const tx = hydraDxApi.tx.PolkadotXcm.execute({
-                      message: xcmMessage,
-                      max_weight: {
-                          ref_time: remoteXcmWeight.value.ref_time,
-                          proof_size: remoteXcmWeight.value.proof_size
-                      }
-                  });
-      
-                  const dryRunDeliveryFees = await hydraDxApi.apis.DryRunApi.dry_run_call(
-                      PolkadotRuntimeOriginCaller.system({
-                          type: "Signed",
-                          value: ALICE_HYDRATION
-                      }),
-                      tx.decodedCall,
-                      {}
-                  );
-      
-                  if (dryRunDeliveryFees.success) {
-                      console.log("Dry run successful");
-                      //pretty print and save into a file using serializeKey
-                      fs.writeFileSync("dryRunDeliveryFeesHydraDx.json", serializeKey(dryRunDeliveryFees));
-                  } else {
-                      console.error("Dry run failed:");
-                      throw new Error("Dry run failed");
-                  } */
+            // Extract the return journey XCM message (HydraDX -> Asset Hub)
+            const returnJourneyMessage = xcmMessage.value.find(instruction => 
+                instruction.type === 'InitiateReserveWithdraw'
+            );
+
+            if (!returnJourneyMessage) {
+                throw new Error('No return journey message found');
+            }
+
+            // Convert V2 instructions to V4 format
+            const v4Instructions = returnJourneyMessage.value.xcm.map(instruction => {
+                if (instruction.type === 'BuyExecution') {
+                    return {
+                        type: 'BuyExecution',
+                        value: {
+                            fees: {
+                                id: {
+                                    parents: instruction.value.fees.id.value.parents,
+                                    interior: instruction.value.fees.id.value.interior.type === 'Here' 
+                                        ? XcmV3Junctions.Here()
+                                        : instruction.value.fees.id.value.interior
+                                },
+                                fun: XcmV3MultiassetFungibility.Fungible(BigInt(instruction.value.fees.fun.value))
+                            },
+                            weight_limit: XcmV3WeightLimit.Unlimited()
+                        }
+                    };
+                } else if (instruction.type === 'DepositAsset') {
+                    return {
+                        type: 'DepositAsset',
+                        value: {
+                            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                            beneficiary: {
+                                parents: instruction.value.beneficiary.parents,
+                                interior: instruction.value.beneficiary.interior
+                            }
+                        }
+                    };
+                }
+                return instruction;
+            });
+
+            console.log("\nCalculating return journey fees (HydraDX -> Asset Hub)...");
+            
+            // Calculate delivery fees for return journey
+            const returnDeliveryFeesResult = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
+                XcmVersionedLocation.V4({
+                    parents: 1,
+                    interior: XcmV3Junctions.X1(
+                        XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+                    )
+                }),
+                XcmVersionedXcm.V4(v4Instructions)
+            );
+            console.log("Return journey delivery fees:", returnDeliveryFeesResult);
+
+            // Calculate execution fees on Asset Hub for the return journey
+            console.log("\nCalculating final execution fees on Asset Hub...");
+            const finalAssetHubWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(
+                XcmVersionedXcm.V4(v4Instructions)
+            );
+
+            if (!finalAssetHubWeight.success) {
+                throw new Error("Failed to calculate final Asset Hub execution weight");
+            }
+
+            console.log("Final Asset Hub execution weight:", finalAssetHubWeight);
+
+            const finalAssetHubFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+                finalAssetHubWeight.value,
+                dotAssetId
+            );
+
+            console.log("Final Asset Hub execution fee:", finalAssetHubFee);
+
+            // Calculate total fees for the entire journey
+            const totalFees = {
+                initial_execution: xcmFee,
+                initial_delivery: deliveryFeesResult,
+                hydradx_execution: remoteXcmFee,
+                return_delivery: returnDeliveryFeesResult,
+                final_execution: finalAssetHubFee
+            };
+
+            console.log("\nTotal fees breakdown:", totalFees);
         } else {
             console.error("Dry run failed:", dryRun);
             throw new Error("Dry run failed");

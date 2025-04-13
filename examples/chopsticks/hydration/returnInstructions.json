@@ -1,0 +1,48 @@
+[
+    {
+        "type": "BuyExecution",
+        "value": {
+            "fees": {
+                "id": {
+                    "type": "Concrete",
+                    "value": {
+                        "parents": 1,
+                        "interior": {
+                            "type": "Here"
+                        }
+                    }
+                },
+                "fun": {
+                    "type": "Fungible",
+                    "value": "200000000000"
+                }
+            },
+            "weight_limit": {
+                "type": "Unlimited"
+            }
+        }
+    },
+    {
+        "type": "DepositAsset",
+        "value": {
+            "assets": {
+                "type": "Wild",
+                "value": {
+                    "type": "All"
+                }
+            },
+            "beneficiary": {
+                "parents": 0,
+                "interior": {
+                    "type": "X1",
+                    "value": {
+                        "type": "AccountId32",
+                        "value": {
+                            "id": {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
