@@ -55,56 +55,22 @@ const MAX_ASSETS = 1 // Maximum number of assets to transfer
 const BUFFER_PERCENTAGE = 120n // 20% buffer for fees
 
 // Helper function to safely extract fee value
-// function extractFeeValue(feeResult: any): bigint {
-//     if (!feeResult || typeof feeResult !== 'object') {
-//         throw new Error(`Invalid fee result: ${serializeKey(feeResult)}`);
-//     }
-
-//     // Handle XCM versioned assets (delivery fees)
-//     if (feeResult.type === 'V4' && Array.isArray(feeResult.value)) {
-//         return feeResult.value.reduce((sum: bigint, item: any) => {
-//             if (item && item.fun?.type === 'Fungible') {
-//                 return sum + BigInt(item.fun.value.toString());
-//             }
-//             return sum;
-//         }, 0n);
-//     }
-
-//     // Handle success/value pairs
-//     if ('success' in feeResult) {
-//         if (!feeResult.success) {
-//             throw new Error(`Fee calculation failed: ${serializeKey(feeResult)}`);
-//         }
-        
-//         // Handle nested value objects
-//         if (typeof feeResult.value === 'object' && 'value' in feeResult.value) {
-//             return BigInt(feeResult.value.value.toString());
-//         }
-        
-//         // Handle direct value
-//         return BigInt(feeResult.value.toString());
-//     }
-
-//     // Handle direct value
-//     if ('value' in feeResult) {
-//         if (typeof feeResult.value === 'object' && 'value' in feeResult.value) {
-//             return BigInt(feeResult.value.value.toString());
-//         }
-//         return BigInt(feeResult.value.toString());
-//     }
-
-//     // Handle case where feeResult itself is the value
-//     if (typeof feeResult === 'object' && 'toString' in feeResult) {
-//         return BigInt(feeResult.toString());
-//     }
-
-//     console.log("Problematic fee result:", serializeKey(feeResult));
-//     throw new Error(`Unexpected fee result structure: ${JSON.stringify(feeResult)}`);
-// }
-
 function extractFeeValue(feeResult: any): bigint {
     if (!feeResult || !feeResult.success) {
-        throw new Error(`Fee calculation was not successful: ${JSON.stringify(feeResult)}`);
+        throw new Error(`Fee calculation was not successful: ${serializeKey(feeResult)}`);
+    }
+
+    // Handle XCM versioned assets (delivery fees)
+    if (feeResult.value?.type === 'V4' && Array.isArray(feeResult.value.value)) {
+        // Sum up all fee values in the array
+        return feeResult.value.value.reduce((sum: bigint, item: any) => {
+            if (item && item.fun?.type === 'Fungible') {
+                // Convert the value to string first to handle both string and number cases
+                const value = item.fun.value.toString();
+                return sum + BigInt(value);
+            }
+            return sum;
+        }, 0n);
     }
 
     // Handle direct bigint value
@@ -117,18 +83,18 @@ function extractFeeValue(feeResult: any): bigint {
         return BigInt(feeResult.value);
     }
 
-    // Handle XCM versioned assets (delivery fees)
-    if (feeResult.value?.type === 'V4' && Array.isArray(feeResult.value.value)) {
-        // Sum up all fee values in the array
-        return feeResult.value.value.reduce((sum: bigint, item: any) => {
-            if (item && item.fun?.type === 'Fungible') {
-                return sum + BigInt(item.fun.value.toString());
-            }
-            return sum;
-        }, 0n);
+    // Handle case where value is a string
+    if (typeof feeResult.value === 'string') {
+        return BigInt(feeResult.value);
     }
 
-    throw new Error(`Unexpected fee result structure: ${JSON.stringify(feeResult)}`);
+    // Handle case where value is an object with a toString method
+    if (typeof feeResult.value === 'object' && feeResult.value !== null && 'toString' in feeResult.value) {
+        return BigInt(feeResult.value.toString());
+    }
+
+    console.log("Problematic fee result:", serializeKey(feeResult));
+    throw new Error(`Unexpected fee result structure: ${serializeKey(feeResult)}`);
 }
 
 async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, hydraDxApi: TypedApi<typeof hydration>,
@@ -189,39 +155,49 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
                         }],
                         maximal: true
                     }),
-                    XcmV4Instruction.InitiateReserveWithdraw({
+                    XcmV4Instruction.DepositAsset({
                         assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                        reserve: {
-                            parents: 1,
-                            interior: XcmV3Junctions.X1(
-                                XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-                            )
-                        },
-                        xcm: [
-                            XcmV4Instruction.BuyExecution({
-                                fees: {
-                                    id: {
-                                        parents: 1,
-                                        interior: XcmV3Junctions.Here()
-                                    },
-                                    fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
-                                },
-                                weight_limit: XcmV3WeightLimit.Unlimited()
-                            }),
-                            XcmV4Instruction.DepositAsset({
-                                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                                beneficiary: {
-                                    parents: 0,
-                                    interior: XcmV3Junctions.X1(
-                                        XcmV3Junction.AccountId32({
-                                            network: undefined,
-                                            id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
-                                        })
-                                    )
-                                }
-                            })
-                        ]
-                    })
+                        beneficiary: {
+                            parents: 0,
+                            interior: XcmV3Junctions.X1(XcmV3Junction.AccountId32({
+                                network: undefined,
+                                id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                            }))
+                        }
+                    }),
+                    // XcmV4Instruction.InitiateReserveWithdraw({
+                    //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                    //     reserve: {
+                    //         parents: 1,
+                    //         interior: XcmV3Junctions.X1(
+                    //             XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+                    //         )
+                    //     },
+                    //     xcm: [
+                    //         XcmV4Instruction.BuyExecution({
+                    //             fees: {
+                    //                 id: {
+                    //                     parents: 1,
+                    //                     interior: XcmV3Junctions.Here()
+                    //                 },
+                    //                 fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                    //             },
+                    //             weight_limit: XcmV3WeightLimit.Unlimited()
+                    //         }),
+                    //         XcmV4Instruction.DepositAsset({
+                    //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                    //             beneficiary: {
+                    //                 parents: 0,
+                    //                 interior: XcmV3Junctions.X1(
+                    //                     XcmV3Junction.AccountId32({
+                    //                         network: undefined,
+                    //                         id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                    //                     })
+                    //                 )
+                    //             }
+                    //         })
+                    //     ]
+                    // })
                 ]
             })
         ]);
@@ -351,6 +327,7 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
         });
 
         // Calculate return delivery fees
+        console.log("\nCalculating return delivery fees...");
         const returnDeliveryFeesResult = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
             XcmVersionedLocation.V4({
                 parents: 1,
@@ -360,8 +337,18 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
             }),
             XcmVersionedXcm.V4(v4Instructions)
         );
-        const returnDeliveryFees = extractFeeValue(returnDeliveryFeesResult);
-
+        console.log("Return delivery fees raw result:", serializeKey(returnDeliveryFeesResult));
+        // const returnDeliveryFees = extractFeeValue(returnDeliveryFeesResult);
+        //console.log("Extracted return delivery fees:", returnDeliveryFees.toString());
+        let returnDeliveryFees = 0n;
+        if(returnDeliveryFeesResult.success){
+            //extract the value from the result
+            const returnDeliveryFeesValue = returnDeliveryFeesResult.value.value[0];
+            if(returnDeliveryFeesValue){
+                //extract the fees
+                returnDeliveryFees = returnDeliveryFeesValue.fun.value as bigint;
+            }
+        }
         // Calculate final Asset Hub execution fees
         const finalAssetHubWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(
             XcmVersionedXcm.V4(v4Instructions)
@@ -475,41 +462,52 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
                     maximal: true
                 }),
 
-                // 2c. Send swapped assets back to Asset Hub
-                XcmV4Instruction.InitiateReserveWithdraw({
+                XcmV4Instruction.DepositAsset({
                     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                    reserve: {
-                        parents: 1,
-                        interior: XcmV3Junctions.X1(
-                            XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-                        )
-                    },
-                    xcm: [
-                        // Pay for final Asset Hub execution
-                        XcmV4Instruction.BuyExecution({
-                            fees: {
-                                id: {
-                                    parents: 1,
-                                    interior: XcmV3Junctions.Here()
-                                },
-                                fun: XcmV3MultiassetFungibility.Fungible(fees.final_execution)
-                            },
-                            weight_limit: XcmV3WeightLimit.Unlimited()
-                        }),
-                        XcmV4Instruction.DepositAsset({
-                            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                            beneficiary: {
-                                parents: 0,
-                                interior: XcmV3Junctions.X1(
-                                    XcmV3Junction.AccountId32({
-                                        network: undefined,
-                                        id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
-                                    })
-                                )
-                            }
-                        })
-                    ]
-                })
+                    beneficiary: {
+                        parents: 0,
+                        interior: XcmV3Junctions.X1(XcmV3Junction.AccountId32({
+                            network: undefined,
+                            id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                        }))
+                    }
+                }),
+
+                // 2c. Send swapped assets back to Asset Hub
+                // XcmV4Instruction.InitiateReserveWithdraw({
+                //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                //     reserve: {
+                //         parents: 1,
+                //         interior: XcmV3Junctions.X1(
+                //             XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+                //         )
+                //     },
+                //     xcm: [
+                //         // Pay for final Asset Hub execution
+                //         XcmV4Instruction.BuyExecution({
+                //             fees: {
+                //                 id: {
+                //                     parents: 1,
+                //                     interior: XcmV3Junctions.Here()
+                //                 },
+                //                 fun: XcmV3MultiassetFungibility.Fungible(fees.final_execution)
+                //             },
+                //             weight_limit: XcmV3WeightLimit.Unlimited()
+                //         }),
+                //         XcmV4Instruction.DepositAsset({
+                //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                //             beneficiary: {
+                //                 parents: 0,
+                //                 interior: XcmV3Junctions.X1(
+                //                     XcmV3Junction.AccountId32({
+                //                         network: undefined,
+                //                         id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                //                     })
+                //                 )
+                //             }
+                //         })
+                //     ]
+                // })
             ]
         })
     ]);

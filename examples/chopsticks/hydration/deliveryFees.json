@@ -1,1 +1,20 @@
-{"success":true,"value":{"type":"V4","value":[{"id":{"parents":1,"interior":{"type":"Here"}},"fun":{"type":"Fungible","value":"307250000"}}]}}
+{
+    "success": true,
+    "value": {
+        "type": "V4",
+        "value": [
+            {
+                "id": {
+                    "parents": 1,
+                    "interior": {
+                        "type": "Here"
+                    }
+                },
+                "fun": {
+                    "type": "Fungible",
+                    "value": "307250000"
+                }
+            }
+        ]
+    }
+}
