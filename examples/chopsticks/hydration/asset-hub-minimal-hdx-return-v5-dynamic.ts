@@ -250,6 +250,9 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
         const [_, messages] = targetMessage;
         const xcmMessage = messages[0];
 
+        //print the messages
+        console.log("xcmMessage:", serializeKey(xcmMessage));
+
         // Calculate initial execution fee
         const xcmFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
             xcmWeight.value,
@@ -434,7 +437,7 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
                             parents: 1,
                             interior: XcmV3Junctions.Here()
                         },
-                        fun: XcmV3MultiassetFungibility.Fungible(fees.hydradx_execution)
+                        fun: XcmV3MultiassetFungibility.Fungible(fees.hydradx_execution + fees.initial_delivery)
                     },
                     weight_limit: XcmV3WeightLimit.Unlimited()
                 }),
