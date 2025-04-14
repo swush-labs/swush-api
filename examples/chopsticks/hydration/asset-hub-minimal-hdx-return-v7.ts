@@ -618,6 +618,14 @@ async function monitorXcmFlow(
             }
         };
         
+        const checkCompletion = () => {
+            if (assetHubComplete && hydraDxComplete && returnComplete && !isCompleted) {
+                cleanup();
+                console.log("\n✅ Complete XCM flow successful!");
+                resolve(true);
+            }
+        };
+        
         try {
             // Subscribe to Asset Hub events using watchValue
             const assetHubObservable = assetHubApi.query.System.Events.watchValue("finalized");
@@ -634,26 +642,24 @@ async function monitorXcmFlow(
                             if (xcmEvent.type === 'Attempted' && !assetHubComplete) {
                                 console.log("✅ Initial XCM from Asset Hub sent successfully");
                                 assetHubComplete = true;
+                                checkCompletion();
                             }
                         }
                         
                         // Check for Balances events to detect final deposit
-                        if (eventData.type === 'Balances') {
+                        if (eventData.type === 'Assets') {
+                            console.log(`✅ Assets event detected: ${eventData.type}`);
+                            //print event details
+                            console.log(`Assets event data: ${serializeKey(eventData)}`);
                             const balanceEvent = eventData.value;
-                            if (balanceEvent.type === 'Deposit') {
-                                const depositData = balanceEvent.value;
-                                if (depositData.who === bob) {
+                            if (balanceEvent.type === 'Issued') {
+                                const issuedData = balanceEvent.value;
+                                if (issuedData.owner === bob) {
                                     console.log(`✅ Final deposit detected to ${bob}`);
                                     returnComplete = true;
+                                    checkCompletion();
                                 }
                             }
-                        }
-
-                        // Check if the entire flow is complete
-                        if (assetHubComplete && hydraDxComplete && returnComplete && !isCompleted) {
-                            cleanup();
-                            console.log("\n✅ Complete XCM flow successful!");
-                            resolve(true);
                         }
                     }
                 },
@@ -687,11 +693,13 @@ async function monitorXcmFlow(
                             if (eventData.type === 'PolkadotXcm' && eventValue.type === 'Attempted') {
                                 console.log("✅ HydraDX received and processed XCM successfully");
                                 hydraDxComplete = true;
+                                checkCompletion();
                             }
                             // Check for successful XCMP message
                             if (eventData.type === 'XcmpQueue' && eventValue.type === 'XcmpMessageSent') {
                                 console.log("✅ HydraDX processed XCMP message successfully");
                                 hydraDxComplete = true;
+                                checkCompletion();
                             }
                         }
                         
@@ -699,13 +707,6 @@ async function monitorXcmFlow(
                         if (eventData.type === 'Router') {
                             const routerEvent = eventData.value;
                             console.log(`✅ Swap executed on HydraDX: Router:${routerEvent.type}`);
-                        }
-
-                        // Check if the entire flow is complete
-                        if (assetHubComplete && hydraDxComplete && returnComplete && !isCompleted) {
-                            cleanup();
-                            console.log("\n✅ Complete XCM flow successful!");
-                            resolve(true);
                         }
                     }
                 },
@@ -751,10 +752,11 @@ async function main() {
         const hydraDxApi = hydraDxConnection.api;
 
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0);
-        const BOB = ss58Encode(bobKeyPair.publicKey, 63);
+        const BOB = ss58Encode(bobKeyPair.publicKey, 0);
+        const BOB_HYDRATION = ss58Encode(bobKeyPair.publicKey, 63); 
         console.log("Alice address (Asset Hub):", ALICE);
         console.log("Bob address (HydraDX):", BOB);
-
+        console.log("Bob address (HydraDX):", BOB_HYDRATION);
         // Check DOT balance on Asset Hub
         const initialBalance = await assetHubApi.query.System.Account.getValue(ALICE);
         const dotBalance = Number(initialBalance.data.free) / 1e10;
