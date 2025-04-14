@@ -11,7 +11,7 @@ import { getPolkadotSigner } from "polkadot-api/signer"
 import { TEST_RPC_ASSET_HUB, TEST_RPC_PARACHAIN_HYDRATION, XCM_RPC_ASSET_HUB, XCM_RPC_HYDRATION } from "../../../services/constants"
 import { TransactionService } from '../../../services/network/TransactionService'
 import { connectPapi } from "../../../services/network/types"
-import { Enum, Binary, TypedApi } from "polkadot-api"
+import { Enum, Binary, TypedApi, FixedSizeBinary } from "polkadot-api"
 import * as fs from 'fs'
 import {
     XcmVersionedLocation,
@@ -377,6 +377,28 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
     }
 }
 
+// Add this helper function near the top of the file with other helper functions
+function generateTopicId(prefix: string): FixedSizeBinary<32> {
+    // Create a 32-byte array filled with zeros
+    const bytes = new Uint8Array(32).fill(0);
+
+    // Convert prefix to bytes and copy it to the start of the array
+    const prefixBytes = new TextEncoder().encode(prefix);
+    bytes.set(prefixBytes.slice(0, 32), 0);
+
+    // Add timestamp to make it unique
+    const timestamp = new Uint8Array(new Date().getTime().toString().split('').map(n => parseInt(n)));
+    bytes.set(timestamp.slice(0, 32 - prefixBytes.length), prefixBytes.length);
+
+    // Print the topic ID in hex format
+    console.log("\nGenerated Topic ID:");
+    console.log("Hex:", Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''));
+    console.log("Prefix:", prefix);
+    console.log("Timestamp:", new Date().getTime());
+
+    return Binary.fromBytes(bytes) as FixedSizeBinary<32>;
+}
+
 async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
     // Calculate total fees with buffer
     const totalFees = fees.initial_execution +
@@ -424,6 +446,7 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
     console.log("\nTotal Withdraw Amount (Transfer + Fees with Buffer):");
     console.log(`  ${formatDOT(withdrawAmount)} DOT`);
 
+    const topicId = generateTopicId("HDX_SWAP");
     // Construct the complete XCM message with calculated fees
     return XcmVersionedXcm.V4([
         // 1. Withdraw DOT from Asset Hub (including all fees)
@@ -434,6 +457,7 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
             },
             fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
         }]),
+        //XcmV4Instruction.SetTopic(topicId),
 
         // 2. Send to HydraDX with instructions
         XcmV4Instruction.DepositReserveAsset({
@@ -462,6 +486,7 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
                     },
                     weight_limit: XcmV3WeightLimit.Unlimited()
                 }),
+                //XcmV4Instruction.SetTopic(topicId),
 
                 // 2b. Exchange DOT for HDX
                 XcmV4Instruction.ExchangeAsset({
@@ -529,7 +554,7 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
                                     })
                                 )
                             }
-                        })
+                        }),
                     ]
                 })
             ]
@@ -607,7 +632,7 @@ async function main() {
 
             if (dryRun.value) {
                 console.log("Dry run successful");
-                fs.writeFileSync("dryRunDynamic.json", serializeKey(dryRun.value));
+             //   fs.writeFileSync("dryRunDynamic.json", serializeKey(dryRun.value));
             } else {
                 console.error("Dry run failed:", dryRun);
                 throw new Error("Dry run failed");

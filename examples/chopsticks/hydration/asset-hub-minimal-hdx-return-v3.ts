@@ -414,6 +414,7 @@ async function main() {
 
         // Calculate total amount needed including all fees
         const TOTAL_AMOUNT = TRANSFER_AMOUNT + HYDRADX_EXECUTION_FEE + ASSET_HUB_RETURN_FEE;
+        console.log("TOTAL_AMOUNT (DOT)", Number(TOTAL_AMOUNT) / 1e10)
 
         // Create the complete XCM message with calculated fees
         const message = XcmVersionedXcm.V4([
