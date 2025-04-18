@@ -399,56 +399,119 @@ function generateTopicId(prefix: string): FixedSizeBinary<32> {
     return Binary.fromBytes(bytes) as FixedSizeBinary<32>;
 }
 
-async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
+async function constructXcmMessage(beneficiaryKeyPair: KeyPair, 
+    hydraDxApi: TypedApi<typeof hydration>, ALICE: string) {
     // Calculate total fees with buffer
-    const totalFees = fees.initial_execution +
-        fees.initial_delivery +
-        fees.hydradx_execution +
-        fees.return_delivery +
-        fees.final_execution;
+    const withdrawAmount = TRANSFER_AMOUNT;
+    const minBuyAmount = TRANSFER_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
 
-    // const totalFeesWithBuffer = (totalFees * BUFFER_PERCENTAGE) / 100n;
-    const withdrawAmount = TRANSFER_AMOUNT + totalFees;
-
-    // Helper function to format planck to DOT
-    const formatDOT = (planck: bigint) => {
-        const dot = Number(planck) / 1e10;
-        return dot.toFixed(8);
-    };
-
-    // Log detailed fee breakdown
-    console.log("\n=== Fee Breakdown ===");
-    console.log("Initial Execution Fee:");
-    console.log(`  ${formatDOT(fees.initial_execution)} DOT`);
-
-    console.log("\nInitial Delivery Fee:");
-    console.log(`  ${formatDOT(fees.initial_delivery)} DOT`);
-
-    console.log("\nHydraDX Execution Fee:");
-    console.log(`  ${formatDOT(fees.hydradx_execution)} DOT`);
-
-    console.log("\nReturn Delivery Fee:");
-    console.log(`  ${formatDOT(fees.return_delivery)} DOT`);
-
-    console.log("\nFinal Execution Fee:");
-    console.log(`  ${formatDOT(fees.final_execution)} DOT`);
-
-    console.log("\n=== Totals ===");
-    console.log("Total Base Fees:");
-    console.log(`  ${formatDOT(totalFees)} DOT`);
-
-    // console.log("\nTotal Fees with Buffer:");
-    // console.log(`  ${formatDOT(totalFeesWithBuffer)} DOT`);
-
-    console.log("\nTransfer Amount:");
-    console.log(`  ${formatDOT(TRANSFER_AMOUNT)} DOT`);
-
-    console.log("\nTotal Withdraw Amount (Transfer + Fees with Buffer):");
-    console.log(`  ${formatDOT(withdrawAmount)} DOT`);
-
+    // Example: Replace encodedOmnipoolSellHex with encoded remark
+    const remarkCall = hydraDxApi.tx.System.remark_with_event({ remark: Binary.fromText("Test from AH") });
+    const encodedRemarkHex = await remarkCall.getEncodedData();
+    const remarkWeight = await remarkCall.getPaymentInfo(ALICE); // Use Alice's HydraDX address for estimation proxy
+    //print the remarkWeight and encodedRemarkHex
+    console.log("Remark Weight:", remarkWeight);
+    console.log("Encoded Remark Hex:", encodedRemarkHex.asHex());
     // Construct the complete XCM message with calculated fees
+    // return XcmVersionedXcm.V4([
+    //     // 1. Withdraw DOT from Asset Hub (including all fees)
+    //     XcmV4Instruction.WithdrawAsset([{
+    //         id: {
+    //             parents: 1,
+    //             interior: XcmV3Junctions.Here()
+    //         },
+    //         fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
+    //     }]),
+    //     //XcmV4Instruction.SetTopic(topicId),
+
+    //     // 2. Send to HydraDX with instructions
+    //     XcmV4Instruction.TransferReserveAsset({
+    //         assets: [{
+    //             id: {
+    //                 parents: 1,
+    //                 interior: XcmV3Junctions.Here()
+    //             },
+    //             fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
+    //         }],
+    //         dest: {
+    //             parents: 1,
+    //             interior: XcmV3Junctions.X1(
+    //                 XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+    //             )
+    //         },
+    //         xcm: [
+    //             // 2a. Pay for HydraDX execution
+    //             XcmV4Instruction.BuyExecution({
+    //                 fees: {
+    //                     id: {
+    //                         parents: 1,
+    //                         interior: XcmV3Junctions.Here()
+    //                     },
+    //                     fun: XcmV3MultiassetFungibility.Fungible(fees.hydradx_execution + fees.initial_delivery)
+    //                 },
+    //                 weight_limit: XcmV3WeightLimit.Unlimited()
+    //             }),
+    //             XcmV4Instruction.Transact({
+    //                 origin_kind: XcmV2OriginKind.SovereignAccount(),
+    //                 require_weight_at_most: { // Use estimated weight for remark
+    //                      ref_time: remarkWeight.weight.ref_time,
+    //                      proof_size: remarkWeight.weight.proof_size
+    //                  },
+    //                 call: encodedRemarkHex // Use the remark call
+    //             })
+
+    //             // XcmV4Instruction.DepositAsset({
+    //             //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+    //             //     beneficiary: {
+    //             //         parents: 0,
+    //             //         interior: XcmV3Junctions.X1(XcmV3Junction.AccountId32({
+    //             //             network: undefined,
+    //             //             id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+    //             //         }))
+    //             //     }
+    //             // }),
+
+    //             //  2c. Send swapped assets back to Asset Hub
+    //             // XcmV4Instruction.InitiateReserveWithdraw({
+    //             //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+    //             //     reserve: {
+    //             //         parents: 1,
+    //             //         interior: XcmV3Junctions.X1(
+    //             //             XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+    //             //         )
+    //             //     },
+    //             //     xcm: [
+    //             //         // Pay for final Asset Hub execution
+    //             //         XcmV4Instruction.BuyExecution({
+    //             //             fees: {
+    //             //                 id: {
+    //             //                     parents: 1,
+    //             //                     interior: XcmV3Junctions.Here()
+    //             //                 },
+    //             //                 fun: XcmV3MultiassetFungibility.Fungible(fees.final_execution + fees.return_delivery)
+    //             //             },
+    //             //             weight_limit: XcmV3WeightLimit.Unlimited()
+    //             //         }),
+    //             //         XcmV4Instruction.DepositAsset({
+    //             //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+    //             //             beneficiary: {
+    //             //                 parents: 0,
+    //             //                 interior: XcmV3Junctions.X1(
+    //             //                     XcmV3Junction.AccountId32({
+    //             //                         network: undefined,
+    //             //                         id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+    //             //                     })
+    //             //                 )
+    //             //             }
+    //             //         }),
+    //             //     ]
+    //             // })
+    //         ]
+    //     })
+    // ]);
+
     return XcmVersionedXcm.V4([
-        // 1. Withdraw DOT from Asset Hub (including all fees)
+        //add WithdrawAsset, BuyExecution, Transact
         XcmV4Instruction.WithdrawAsset([{
             id: {
                 parents: 1,
@@ -456,109 +519,25 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair) {
             },
             fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
         }]),
-        //XcmV4Instruction.SetTopic(topicId),
-
-        // 2. Send to HydraDX with instructions
-        XcmV4Instruction.DepositReserveAsset({
-            assets: XcmV4AssetAssetFilter.Definite([{
+        XcmV4Instruction.BuyExecution({
+            fees: {
                 id: {
                     parents: 1,
                     interior: XcmV3Junctions.Here()
                 },
                 fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
-            }]),
-            dest: {
-                parents: 1,
-                interior: XcmV3Junctions.X1(
-                    XcmV3Junction.Parachain(HYDRADX_PARA_ID)
-                )
             },
-            xcm: [
-                // 2a. Pay for HydraDX execution
-                XcmV4Instruction.BuyExecution({
-                    fees: {
-                        id: {
-                            parents: 1,
-                            interior: XcmV3Junctions.Here()
-                        },
-                        fun: XcmV3MultiassetFungibility.Fungible(fees.hydradx_execution + fees.initial_delivery)
-                    },
-                    weight_limit: XcmV3WeightLimit.Unlimited()
-                }),
-                //XcmV4Instruction.SetTopic(topicId),
-
-                // 2b. Exchange DOT for HDX
-                XcmV4Instruction.ExchangeAsset({
-                    give: XcmV4AssetAssetFilter.Definite([{
-                        id: {
-                            parents: 1,
-                            interior: XcmV3Junctions.Here()
-                        },
-                        fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
-                    }]),
-                    want: [{
-                        id: {
-                            parents: 1,
-                            interior: XcmV3Junctions.X3([
-                                XcmV3Junction.Parachain(ASSET_HUB_PARA_ID),
-                                XcmV3Junction.PalletInstance(50),
-                                XcmV3Junction.GeneralIndex(BigInt(1984))
-                            ])
-                        },
-                        fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000))
-                    }],
-                    maximal: true
-                }),
-
-                // XcmV4Instruction.DepositAsset({
-                //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                //     beneficiary: {
-                //         parents: 0,
-                //         interior: XcmV3Junctions.X1(XcmV3Junction.AccountId32({
-                //             network: undefined,
-                //             id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
-                //         }))
-                //     }
-                // }),
-
-                //  2c. Send swapped assets back to Asset Hub
-                XcmV4Instruction.InitiateReserveWithdraw({
-                    assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                    reserve: {
-                        parents: 1,
-                        interior: XcmV3Junctions.X1(
-                            XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-                        )
-                    },
-                    xcm: [
-                        // Pay for final Asset Hub execution
-                        XcmV4Instruction.BuyExecution({
-                            fees: {
-                                id: {
-                                    parents: 1,
-                                    interior: XcmV3Junctions.Here()
-                                },
-                                fun: XcmV3MultiassetFungibility.Fungible(fees.final_execution + fees.return_delivery)
-                            },
-                            weight_limit: XcmV3WeightLimit.Unlimited()
-                        }),
-                        XcmV4Instruction.DepositAsset({
-                            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                            beneficiary: {
-                                parents: 0,
-                                interior: XcmV3Junctions.X1(
-                                    XcmV3Junction.AccountId32({
-                                        network: undefined,
-                                        id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
-                                    })
-                                )
-                            }
-                        }),
-                    ]
-                })
-            ]
+            weight_limit: XcmV3WeightLimit.Unlimited()
+        }),
+        XcmV4Instruction.Transact({
+            origin_kind: XcmV2OriginKind.SovereignAccount(),
+            require_weight_at_most: {
+                ref_time: remarkWeight.weight.ref_time,
+                proof_size: remarkWeight.weight.proof_size
+            },
+            call: encodedRemarkHex
         })
-    ]);
+    ])
 }
 
 /**
@@ -753,6 +732,7 @@ async function main() {
         const hydraDxApi = hydraDxConnection.api;
 
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0);
+        const ALICE_HYDRATION = ss58Encode(aliceKeyPair.publicKey, 63);
         const BOB = ss58Encode(bobKeyPair.publicKey, 0);
         const BOB_HYDRATION = ss58Encode(bobKeyPair.publicKey, 63); 
         console.log("Alice address (Asset Hub):", ALICE);
@@ -778,13 +758,13 @@ async function main() {
         });
 
         // Calculate all fees
-        console.log("\nCalculating fees...");
-        const fees = await calculateFees(assetHubApi, hydraDxApi, dotAssetId, bobKeyPair, ALICE);
-        console.log("\nFees calculated:", fees);
+        // console.log("\nCalculating fees...");
+        // const fees = await calculateFees(assetHubApi, hydraDxApi, dotAssetId, bobKeyPair, ALICE);
+        // console.log("\nFees calculated:", fees);
 
         // Construct XCM message with dynamic fees
         console.log("\nConstructing XCM message with dynamic fees...");
-        const message = await constructXcmMessage(fees, bobKeyPair);
+        const message = await constructXcmMessage(bobKeyPair, hydraDxApi, ALICE);
 
         //calculate weights for ref_time and proof_size
         const weights = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
@@ -795,12 +775,14 @@ async function main() {
 
         // Execute XCM message
         console.log("\nExecuting XCM message...");
-        const tx = assetHubApi.tx.PolkadotXcm.execute({
-            message: message,
-            max_weight: {
-                ref_time: weights.value.ref_time,
-                proof_size: weights.value.proof_size
-            }
+        const tx = assetHubApi.tx.PolkadotXcm.send({
+            dest: XcmVersionedLocation.V4({
+                parents: 1,
+                interior: XcmV3Junctions.X1(
+                    XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+                )
+            }), 
+            message: message
         });
 
         // Dry run the transaction
@@ -842,25 +824,25 @@ async function main() {
         await txPromise;
 
         // Start monitoring the XCM flow
-        console.log("\nStarting XCM flow monitoring...");
-        const flowSuccess = await monitorXcmFlow(
-            assetHubApi,
-            hydraDxApi,
-            ALICE,
-            BOB,
-            TRANSFER_AMOUNT
-        );
+        // console.log("\nStarting XCM flow monitoring...");
+        // const flowSuccess = await monitorXcmFlow(
+        //     assetHubApi,
+        //     hydraDxApi,
+        //     ALICE,
+        //     BOB,
+        //     TRANSFER_AMOUNT
+        // );
 
-        if (flowSuccess) {
-            console.log("\n🎉 Transaction fully completed! Funds have been transferred across chains.");
+        // if (flowSuccess) {
+        //     console.log("\n🎉 Transaction fully completed! Funds have been transferred across chains.");
 
-            // Verify final balances
-            const finalBalance = await assetHubApi.query.System.Account.getValue(BOB);
-            console.log("\nFinal balances:");
-            console.log(`Bob DOT on Asset Hub: ${Number(finalBalance.data.free) / 1e10} DOT`);
-        } else {
-            console.log("\n⚠️ XCM flow monitoring ended but could not confirm full completion.");
-        }
+        //     // Verify final balances
+        //     const finalBalance = await assetHubApi.query.System.Account.getValue(BOB);
+        //     console.log("\nFinal balances:");
+        //     console.log(`Bob DOT on Asset Hub: ${Number(finalBalance.data.free) / 1e10} DOT`);
+        // } else {
+        //     console.log("\n⚠️ XCM flow monitoring ended but could not confirm full completion.");
+        // }
 
     } catch (error) {
         console.error('Transaction error:', error);

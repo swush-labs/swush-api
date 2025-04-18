@@ -52,6 +52,9 @@ async function main() {
         value: 12345n,
     })
 
+    //get calldata
+    const calldata = transfer.decodedCall
+
     const ALICE = ss58Encode(aliceKeyPair.publicKey)
     // TODO: initiate a XCM transfer to the parachain hydration
     // sign and submit the transaction

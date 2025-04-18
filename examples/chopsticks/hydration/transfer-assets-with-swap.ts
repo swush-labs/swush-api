@@ -99,19 +99,24 @@ async function main() {
         });
 
         const encodedOmnipoolSellHex = await omnipoolSell.getEncodedData();
+
+        //print the encoded omnipool sell hex
+        console.log("Encoded Omnipool Sell Hex:", encodedOmnipoolSellHex.asHex)
+
         const omnipool_weight = await omnipoolSell.getPaymentInfo(ALICE);
+        console.log("Omnipool weight:", omnipool_weight)
 
         // Create the remote fees asset ID (using the same asset for fees)
         const dotAssetId = XcmVersionedAssetId.V3(
             XcmV3MultiassetAssetId.Concrete({
-                parents: 0, // 1 for relay chain DOT, 0 for local asset
+                parents: 1, // 1 for relay chain DOT, 0 for local asset
                 interior: XcmV3Junctions.Here(),
             })
         );
         // Create the assets array with a single asset
         const assets = XcmVersionedAssets.V3([{
             id: XcmV3MultiassetAssetId.Concrete({
-                parents: 0, // 1 for relay chain DOT, 0 for local asset
+                parents: 1, // 1 for relay chain DOT, 0 for local asset
                 interior: XcmV3Junctions.Here(),
             }),
             fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
@@ -130,7 +135,7 @@ async function main() {
         const customXcmOnDest = XcmVersionedXcm.V3(
             [
                 XcmV3Instruction.Transact({
-                    origin_kind: XcmV2OriginKind.SovereignAccount(),
+                    origin_kind: XcmV2OriginKind.Xcm(),
                     require_weight_at_most: {
                         ref_time: omnipool_weight.weight.ref_time,
                         proof_size: omnipool_weight.weight.proof_size
@@ -146,15 +151,12 @@ async function main() {
             // Create the transaction
             const tx = assetHubApi.tx.PolkadotXcm.transfer_assets_using_type_and_then({
                 assets,
-            assets_transfer_type: Enum("RemoteReserve", destination),
-            custom_xcm_on_dest: customXcmOnDest,
-            dest: destination,
-            fees_transfer_type: Enum("RemoteReserve", destination),
-            remote_fees_id: dotAssetId,
-            weight_limit: XcmV3WeightLimit.Limited({
-                ref_time: xcmWeight.value.ref_time,
-                    proof_size: xcmWeight.value.proof_size
-                })
+                assets_transfer_type: Enum("LocalReserve"),
+                custom_xcm_on_dest: customXcmOnDest,
+                dest: destination,
+                fees_transfer_type: Enum("LocalReserve"),
+                remote_fees_id: dotAssetId,
+                weight_limit: XcmV3WeightLimit.Unlimited()
             });
 
             console.log("Submitting XCM transfer with Omnipool swap transaction...")
@@ -169,7 +171,7 @@ async function main() {
                     console.log('Transaction status:', status);
                 }
             });
-            
+
         }
 
         // console.log("Submitting XCM transfer with Omnipool swap transaction...")

@@ -69,6 +69,7 @@ async function main() {
 
     try {
         const ALICE = ss58Encode(aliceKeyPair.publicKey, 0) // Asset Hub SS58 format
+        const ALICE_HYDRATION = ss58Encode(aliceKeyPair.publicKey, 63) // HydraDX SS58 format
         const BOB = ss58Encode(bobKeyPair.publicKey, 63) // HydraDX SS58 format
 
         console.log("Alice address (Asset Hub):", ALICE)
@@ -93,14 +94,14 @@ async function main() {
         // Get the encoded Omnipool.sell call
         const omnipoolSell = await hydraDxApi.tx.Router.sell({
             asset_in: DOT_ASSET_ID,
-            asset_out: HDX_ASSET_ID,
+            asset_out: 10,
             amount_in: TRANSFER_AMOUNT,
             min_amount_out: minBuyAmount,
             route: []
         })
 
         const encodedOmnipoolSellHex = await omnipoolSell.getEncodedData();
-        const omnipool_weight = await omnipoolSell.getPaymentInfo(ALICE);
+        const omnipool_weight = await omnipoolSell.getPaymentInfo(ALICE_HYDRATION);
 
         const customXcmOnDest = XcmVersionedXcm.V3(
             [
