@@ -401,8 +401,9 @@ function generateTopicId(prefix: string): FixedSizeBinary<32> {
 
 async function constructXcmMessage(beneficiaryKeyPair: KeyPair, 
     hydraDxApi: TypedApi<typeof hydration>, ALICE: string) {
-    // Calculate total fees with buffer
-    const withdrawAmount = TRANSFER_AMOUNT;
+    // Calculate total fees with buffer and add 10000000000n for the execution fee
+    const buffer = 10000000000n;
+    const withdrawAmount = TRANSFER_AMOUNT ;
     const minBuyAmount = TRANSFER_AMOUNT * BigInt(100 - SLIPPAGE_TOLERANCE) / 100n
 
     // Example: Replace encodedOmnipoolSellHex with encoded remark
