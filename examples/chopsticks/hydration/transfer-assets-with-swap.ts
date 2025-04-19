@@ -10,7 +10,7 @@ import { getPolkadotSigner } from "polkadot-api/signer"
 import { TEST_RPC_ASSET_HUB, TEST_RPC_PARACHAIN_HYDRATION } from "../../../services/constants"
 import { TransactionService } from '../../../services/network/TransactionService';
 import { connectPapi } from "../../../services/network/types";
-import { Enum } from "polkadot-api";
+import { Binary, Enum } from "polkadot-api";
 import {
     XcmVersionedLocation,
     XcmVersionedAssets,
@@ -22,7 +22,8 @@ import {
     XcmV3MultiassetFungibility,
     XcmVersionedXcm,
     XcmV3Instruction,
-    XcmV2OriginKind
+    XcmV2OriginKind,
+    XcmV4Instruction
 } from "@polkadot-api/descriptors";
 
 // Constants
@@ -107,23 +108,18 @@ async function main() {
         console.log("Omnipool weight:", omnipool_weight)
 
         // Create the remote fees asset ID (using the same asset for fees)
-        const dotAssetId = XcmVersionedAssetId.V3(
-            XcmV3MultiassetAssetId.Concrete({
-                parents: 1, // 1 for relay chain DOT, 0 for local asset
-                interior: XcmV3Junctions.Here(),
-            })
-        );
+        const dotAssetId = {
+            parents: 1,
+            interior: XcmV3Junctions.Here()
+        };
         // Create the assets array with a single asset
-        const assets = XcmVersionedAssets.V3([{
-            id: XcmV3MultiassetAssetId.Concrete({
-                parents: 1, // 1 for relay chain DOT, 0 for local asset
-                interior: XcmV3Junctions.Here(),
-            }),
+        const assets = XcmVersionedAssets.V4([{
+            id: dotAssetId,
             fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
         }]);
 
         // Define the destination (HydraDX parachain)
-        const destination = XcmVersionedLocation.V3({
+        const destination = XcmVersionedLocation.V4({
             parents: 1,
             interior: XcmV3Junctions.X1(
                 XcmV3Junction.Parachain(HYDRADX_PARA_ID)
@@ -132,30 +128,76 @@ async function main() {
 
 
 
-        const customXcmOnDest = XcmVersionedXcm.V3(
-            [
-                XcmV3Instruction.Transact({
-                    origin_kind: XcmV2OriginKind.Xcm(),
-                    require_weight_at_most: {
-                        ref_time: omnipool_weight.weight.ref_time,
-                        proof_size: omnipool_weight.weight.proof_size
-                    },
-                    call: encodedOmnipoolSellHex
-                })
-            ]
-        )
+        // const customXcmOnDest = XcmVersionedXcm.V3(
+        //     [
+        //         XcmV3Instruction.Transact({
+        //             origin_kind: XcmV2OriginKind.Xcm(),
+        //             require_weight_at_most: {
+        //                 ref_time: omnipool_weight.weight.ref_time,
+        //                 proof_size: omnipool_weight.weight.proof_size
+        //             },
+        //             call: encodedOmnipoolSellHex
+        //         })
+        //     ]
+        // )
 
-        const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(customXcmOnDest)
+        //remark with event
+        const remarkCall = hydraDxApi.tx.System.remark_with_event({ remark: Binary.fromText("Test from AH") });
+        const encodedRemarkHex = await remarkCall.getEncodedData();
+        const remarkWeight = await remarkCall.getPaymentInfo(ALICE); // Use Alice's HydraDX address for estimation proxy
+        //print the remarkWeight and encodedRemarkHex
+        console.log("Remark Weight:", remarkWeight);
+        console.log("Encoded Remark Hex:", encodedRemarkHex.asHex());
+
+        const XCM_TRANSACTION =
+            XcmV4Instruction.Transact({
+                origin_kind: XcmV2OriginKind.SovereignAccount(),
+                require_weight_at_most: {
+                    ref_time: remarkWeight.weight.ref_time,
+                    proof_size: remarkWeight.weight.proof_size
+                },
+                call: encodedRemarkHex
+            })
+
+        const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(XcmVersionedXcm.V4([XCM_TRANSACTION]))
+
+        const dot_loc = {
+            parents: 1,
+            interior: XcmV3Junctions.Here()
+        };
+        const XCM_DEST = XcmVersionedXcm.V4([
+            //add WithdrawAsset, BuyExecution, Transact
+
+            XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+                XcmV3Junction.AccountId32({
+                    network: undefined,
+                    id: Binary.fromBytes(aliceKeyPair.publicKey),
+                }),
+            )),
+
+            XcmV4Instruction.WithdrawAsset([{
+                id: dot_loc,
+                fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+            }]),
+            XcmV4Instruction.BuyExecution({
+                fees: {
+                    id: dot_loc,
+                    fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                },
+                weight_limit: XcmV3WeightLimit.Unlimited()
+            }),
+            XCM_TRANSACTION
+        ])
 
         if (xcmWeight.success) {
             // Create the transaction
             const tx = assetHubApi.tx.PolkadotXcm.transfer_assets_using_type_and_then({
                 assets,
                 assets_transfer_type: Enum("LocalReserve"),
-                custom_xcm_on_dest: customXcmOnDest,
+                custom_xcm_on_dest: XCM_DEST,
                 dest: destination,
                 fees_transfer_type: Enum("LocalReserve"),
-                remote_fees_id: dotAssetId,
+                remote_fees_id: XcmVersionedAssetId.V4(dotAssetId),
                 weight_limit: XcmV3WeightLimit.Unlimited()
             });
 

@@ -45,7 +45,7 @@ interface Fees {
 }
 
 // Constants
-const TRANSFER_AMOUNT = 200_000_000_000n // 20 DOT in planck units
+const TRANSFER_AMOUNT = 200_000_000_000_000n // 20 DOT in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in HydraDX
 const DOT_ASSET_ID = 5 // DOT token ID in HydraDX
 const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
@@ -57,6 +57,7 @@ const BUFFER_PERCENTAGE = 100n // 20% buffer for fees
 
 
 async function constructXcmMessage(beneficiaryKeyPair: KeyPair,
+    aliceKeyPair: KeyPair,
     hydraDxApi: TypedApi<typeof hydration>, ALICE: string) {
     // Calculate total fees with buffer and add 10000000000n for the execution fee
     const buffer = 10000000000n;
@@ -111,17 +112,24 @@ async function constructXcmMessage(beneficiaryKeyPair: KeyPair,
 
     const final_fees = fees.value + buffer;
     return XcmVersionedXcm.V4([
+
+        // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+        //     XcmV3Junction.AccountId32({
+        //         network: undefined,
+        //         id: Binary.fromBytes(aliceKeyPair.publicKey),
+        //     }),
+        // )),
         //add WithdrawAsset, BuyExecution, Transact
         XcmV4Instruction.WithdrawAsset([{
-            id: dot_loc,
+            id: hdx_loc,
             fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
         }]),
         XcmV4Instruction.BuyExecution({
             fees: {
-                id: dot_loc,
+                id: hdx_loc,
                 fun: XcmV3MultiassetFungibility.Fungible(final_fees)
             },
-            weight_limit: XcmV3WeightLimit.Unlimited()
+            weight_limit: XcmV3WeightLimit.Limited(transactionWeight.value)
         }),
         XCM_TRANSACTION
     ])
@@ -180,7 +188,7 @@ async function main() {
 
         // Construct XCM message with dynamic fees
         console.log("\nConstructing XCM message with dynamic fees...");
-        const message = await constructXcmMessage(bobKeyPair, hydraDxApi, ALICE_HYDRATION);
+        const message = await constructXcmMessage(bobKeyPair, aliceKeyPair, hydraDxApi, ALICE_HYDRATION);
 
         //calculate weights for ref_time and proof_size
         const weights = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
