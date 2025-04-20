@@ -46,6 +46,7 @@ interface Fees {
 
 // Constants
 const TRANSFER_AMOUNT = 200_000_000_000n // 20 DOT in planck units
+const HDX_AMOUNT = 1000000000000n // 5000 HDX in planck units
 const HDX_ASSET_ID = 0 // HDX token ID in HydraDX
 const DOT_ASSET_ID = 5 // DOT token ID in HydraDX
 const HYDRADX_PARA_ID = 2034 // HydraDX parachain ID
@@ -493,12 +494,7 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair, alic
                 )
             },
             xcm: [
-                XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
-                    XcmV3Junction.AccountId32({
-                        network: undefined,
-                        id: Binary.fromBytes(aliceKeyPair.publicKey)
-                    })
-                )),
+
                 // 2a. Pay for HydraDX execution
                 XcmV4Instruction.BuyExecution({
                     fees: {
@@ -510,6 +506,52 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair, alic
                     },
                     weight_limit: XcmV3WeightLimit.Unlimited()
                 }),
+                XcmV4Instruction.ExchangeAsset({
+                    give: XcmV4AssetAssetFilter.Definite([{
+                        id: {
+                            parents: 1,
+                            interior: XcmV3Junctions.Here()
+                        },
+                        fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+                    }]),
+                    //     want: [{
+                    //         id: {
+                    //             parents: 0,
+                    //             interior: XcmV3Junctions.Here()
+                    //         },
+                    //         fun: XcmV3MultiassetFungibility.Fungible(HDX_AMOUNT)
+                    //     }],
+                    //     maximal: true
+                    // }),
+                    want: [{
+                        id: {
+                            parents: 0,
+                            interior: XcmV3Junctions.X1(
+                                XcmV3Junction.GeneralIndex(0n)
+                            )
+                        },
+                        fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000))
+                    }],
+                    maximal: true
+                }),
+                XcmV4Instruction.BuyExecution({
+                    fees: {
+                        id: {
+                            parents: 0,
+                            interior: XcmV3Junctions.X1(
+                                XcmV3Junction.GeneralIndex(0n)
+                            )
+                        },
+                        fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000))
+                    },
+                    weight_limit: XcmV3WeightLimit.Unlimited()
+                }),
+                XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+                    XcmV3Junction.AccountId32({
+                        network: undefined,
+                        id: Binary.fromBytes(aliceKeyPair.publicKey)
+                    })
+                )),
                 XCM_TRANSACTION
             ]
         })

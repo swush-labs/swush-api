@@ -172,8 +172,8 @@ async function main() {
         const XCM_DEST = XcmVersionedXcm.V4([
             //add WithdrawAsset, BuyExecution, Transact
 
-           // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(XcmV3Junction.Parachain(HYDRADX_PARA_ID))),
-            
+            // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(XcmV3Junction.Parachain(HYDRADX_PARA_ID))),
+
             // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X2([
             //     XcmV3Junction.Parachain(HYDRADX_PARA_ID),
             //     XcmV3Junction.AccountId32({
@@ -181,18 +181,25 @@ async function main() {
             //         id: Binary.fromBytes(aliceKeyPair.publicKey),
             //     }),
             // ])),
-            XcmV4Instruction.DepositAsset({
-                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                beneficiary: {
-                    parents: 0,
-                    interior: XcmV3Junctions.X1(
-                        XcmV3Junction.AccountId32({
-                            network: undefined,
-                            id: Binary.fromBytes(aliceKeyPair.publicKey),
-                        })
-                    )
-                }
-            }),
+            // XcmV4Instruction.DepositAsset({
+            //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+            //     beneficiary: {
+            //         parents: 0,
+            //         interior: XcmV3Junctions.X1(
+            //             XcmV3Junction.AccountId32({
+            //                 network: undefined,
+            //                 id: Binary.fromBytes(aliceKeyPair.publicKey),
+            //             })
+            //         )
+            //     }
+            // }),
+
+            XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+                XcmV3Junction.AccountId32({
+                    network: undefined,
+                    id: Binary.fromBytes(aliceKeyPair.publicKey)
+                })
+            )),
 
             XcmV4Instruction.BuyExecution({
                 fees: {
