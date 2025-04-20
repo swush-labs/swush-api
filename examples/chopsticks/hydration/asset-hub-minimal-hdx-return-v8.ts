@@ -155,16 +155,16 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
                         }],
                         maximal: true
                     }),
-                    // XcmV4Instruction.DepositAsset({
-                    //     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                    //     beneficiary: {
-                    //         parents: 0,
-                    //         interior: XcmV3Junctions.X1(XcmV3Junction.AccountId32({
-                    //             network: undefined,
-                    //             id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
-                    //         }))
-                    //     }
-                    // }),
+                    XcmV4Instruction.DepositAsset({
+                        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                        beneficiary: {
+                            parents: 0,
+                            interior: XcmV3Junctions.X1(XcmV3Junction.AccountId32({
+                                network: undefined,
+                                id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                            }))
+                        }
+                    }),
                     XcmV4Instruction.InitiateReserveWithdraw({
                         assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
                         reserve: {
@@ -399,7 +399,7 @@ function generateTopicId(prefix: string): FixedSizeBinary<32> {
     return Binary.fromBytes(bytes) as FixedSizeBinary<32>;
 }
 
-async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair,
+async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair, aliceKeyPair: KeyPair,
     hydraDxApi: TypedApi<typeof hydration>, ALICE: string) {
     // Calculate total fees with buffer
     const totalFees = fees.initial_execution +
@@ -493,6 +493,12 @@ async function constructXcmMessage(fees: Fees, beneficiaryKeyPair: KeyPair,
                 )
             },
             xcm: [
+                XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+                    XcmV3Junction.AccountId32({
+                        network: undefined,
+                        id: Binary.fromBytes(aliceKeyPair.publicKey)
+                    })
+                )),
                 // 2a. Pay for HydraDX execution
                 XcmV4Instruction.BuyExecution({
                     fees: {
@@ -733,7 +739,7 @@ async function main() {
 
         // Construct XCM message with dynamic fees
         console.log("\nConstructing XCM message with dynamic fees...");
-        const message = await constructXcmMessage(fees, bobKeyPair, hydraDxApi, ALICE);
+        const message = await constructXcmMessage(fees, bobKeyPair, aliceKeyPair, hydraDxApi, ALICE);
 
         //calculate weights for ref_time and proof_size
         const weights = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);

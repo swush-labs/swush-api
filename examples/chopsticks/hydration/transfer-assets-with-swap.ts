@@ -23,8 +23,11 @@ import {
     XcmVersionedXcm,
     XcmV3Instruction,
     XcmV2OriginKind,
-    XcmV4Instruction
+    XcmV4Instruction,
+    XcmV4AssetAssetFilter,
+    XcmV4AssetWildAsset
 } from "@polkadot-api/descriptors";
+import { ASSET_HUB_PARA_ID } from "./constants";
 
 // Constants
 const TRANSFER_AMOUNT = 100_000_000_000_000n // 1 DOT in planck units
@@ -151,7 +154,7 @@ async function main() {
 
         const XCM_TRANSACTION =
             XcmV4Instruction.Transact({
-                origin_kind: XcmV2OriginKind.SovereignAccount(),
+                origin_kind: XcmV2OriginKind.Native(),
                 require_weight_at_most: {
                     ref_time: remarkWeight.weight.ref_time,
                     proof_size: remarkWeight.weight.proof_size
@@ -165,20 +168,32 @@ async function main() {
             parents: 1,
             interior: XcmV3Junctions.Here()
         };
+
         const XCM_DEST = XcmVersionedXcm.V4([
             //add WithdrawAsset, BuyExecution, Transact
 
-            XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
-                XcmV3Junction.AccountId32({
-                    network: undefined,
-                    id: Binary.fromBytes(aliceKeyPair.publicKey),
-                }),
-            )),
+           // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(XcmV3Junction.Parachain(HYDRADX_PARA_ID))),
+            
+            // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X2([
+            //     XcmV3Junction.Parachain(HYDRADX_PARA_ID),
+            //     XcmV3Junction.AccountId32({
+            //         network: undefined,
+            //         id: Binary.fromBytes(aliceKeyPair.publicKey),
+            //     }),
+            // ])),
+            XcmV4Instruction.DepositAsset({
+                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                beneficiary: {
+                    parents: 0,
+                    interior: XcmV3Junctions.X1(
+                        XcmV3Junction.AccountId32({
+                            network: undefined,
+                            id: Binary.fromBytes(aliceKeyPair.publicKey),
+                        })
+                    )
+                }
+            }),
 
-            XcmV4Instruction.WithdrawAsset([{
-                id: dot_loc,
-                fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
-            }]),
             XcmV4Instruction.BuyExecution({
                 fees: {
                     id: dot_loc,
@@ -187,6 +202,20 @@ async function main() {
                 weight_limit: XcmV3WeightLimit.Unlimited()
             }),
             XCM_TRANSACTION
+
+
+            // XcmV4Instruction.WithdrawAsset([{
+            //     id: dot_loc,
+            //     fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+            // }]),
+            // XcmV4Instruction.BuyExecution({
+            //     fees: {
+            //         id: dot_loc,
+            //         fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+            //     },
+            //     weight_limit: XcmV3WeightLimit.Unlimited()
+            // }),
+            // XCM_TRANSACTION
         ])
 
         if (xcmWeight.success) {

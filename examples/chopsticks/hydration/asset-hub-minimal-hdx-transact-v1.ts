@@ -29,7 +29,8 @@ import {
     XcmPalletOrigin,
     PolkadotRuntimeOriginCaller,
     XcmV4AssetWildAsset,
-    XcmV2MultiassetWildFungibility
+    XcmV2MultiassetWildFungibility,
+    XcmV3Instruction
 } from "@polkadot-api/descriptors"
 import { serializeKey } from "@/assets/utils"
 import { saveToFile } from "@/utils"
@@ -111,25 +112,37 @@ async function constructXcmMessage(beneficiaryKeyPair: KeyPair,
     }
 
     const final_fees = fees.value + buffer;
-    return XcmVersionedXcm.V4([
-
-        // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+    return XcmVersionedXcm.V3([
+        // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X2([
+        //     XcmV3Junction.Parachain(ASSET_HUB_PARA_ID),
         //     XcmV3Junction.AccountId32({
         //         network: undefined,
         //         id: Binary.fromBytes(aliceKeyPair.publicKey),
         //     }),
+        // ])),
+        // XcmV4Instruction.DescendOrigin(XcmV3Junctions.X1(
+        //     XcmV3Junction.AccountId32({
+        //         network: undefined,
+        //         id: Binary.fromText("0xdd2399f3b5ca0fc584c4637283cda4d73f6f87c0")
+        //     })
         // )),
         //add WithdrawAsset, BuyExecution, Transact
-        XcmV4Instruction.WithdrawAsset([{
-            id: hdx_loc,
-            fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
-        }]),
-        XcmV4Instruction.BuyExecution({
+        // XcmV3Instruction.WithdrawAsset([{
+        //     id: XcmV3MultiassetAssetId.Concrete({
+        //         parents: 1,
+        //         interior: XcmV3Junctions.Here()
+        //     }),
+        //     fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
+        // }]),
+        XcmV3Instruction.BuyExecution({
             fees: {
-                id: hdx_loc,
+                id: XcmV3MultiassetAssetId.Concrete({
+                    parents: 0,
+                    interior: XcmV3Junctions.X1(XcmV3Junction.PalletInstance(10))
+                }),
                 fun: XcmV3MultiassetFungibility.Fungible(final_fees)
             },
-            weight_limit: XcmV3WeightLimit.Limited(transactionWeight.value)
+            weight_limit: XcmV3WeightLimit.Unlimited()
         }),
         XCM_TRANSACTION
     ])
@@ -200,7 +213,7 @@ async function main() {
         // Execute XCM message
         console.log("\nExecuting XCM message...");
         const tx = assetHubApi.tx.PolkadotXcm.send({
-            dest: XcmVersionedLocation.V4({
+            dest: XcmVersionedLocation.V3({
                 parents: 1,
                 interior: XcmV3Junctions.X1(
                     XcmV3Junction.Parachain(HYDRADX_PARA_ID)
