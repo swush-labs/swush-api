@@ -152,14 +152,20 @@ async function main() {
         console.log("Remark Weight:", remarkWeight);
         console.log("Encoded Remark Hex:", encodedRemarkHex.asHex());
 
+        const setMultiCurrency = hydraDxApi.tx.MultiTransactionPayment.set_currency({
+            currency: 5,
+        });
+        const encodedSetMultiCurrencyHex = await setMultiCurrency.getEncodedData();
+        console.log("Encoded Set Multi Currency Hex:", encodedSetMultiCurrencyHex.asHex());
+
+        const setMultiCurrencyWeight = await setMultiCurrency.getPaymentInfo(ALICE);
+        console.log("Set Multi Currency Weight:", setMultiCurrencyWeight);
+
         const XCM_TRANSACTION =
             XcmV4Instruction.Transact({
-                origin_kind: XcmV2OriginKind.Native(),
-                require_weight_at_most: {
-                    ref_time: remarkWeight.weight.ref_time,
-                    proof_size: remarkWeight.weight.proof_size
-                },
-                call: encodedRemarkHex
+                origin_kind: XcmV2OriginKind.SovereignAccount(),
+                require_weight_at_most: setMultiCurrencyWeight.weight,
+                call: encodedSetMultiCurrencyHex
             })
 
         const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(XcmVersionedXcm.V4([XCM_TRANSACTION]))
