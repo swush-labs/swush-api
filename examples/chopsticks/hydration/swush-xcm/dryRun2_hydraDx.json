@@ -1,0 +1,15 @@
+{
+    "success": true,
+    "value": {
+        "execution_result": {
+            "type": "Error",
+            "value": {
+                "error": {
+                    "type": "Barrier"
+                }
+            }
+        },
+        "emitted_events": [],
+        "forwarded_xcms": []
+    }
+}

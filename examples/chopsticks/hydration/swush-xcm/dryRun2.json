@@ -1,0 +1,30 @@
+{
+    "success": true,
+    "value": {
+        "execution_result": {
+            "success": false,
+            "value": {
+                "post_info": {
+                    "actual_weight": {
+                        "ref_time": "50763388381",
+                        "proof_size": "429548"
+                    },
+                    "pays_fee": {
+                        "type": "Yes"
+                    }
+                },
+                "error": {
+                    "type": "Module",
+                    "value": {
+                        "type": "PolkadotXcm",
+                        "value": {
+                            "type": "LocalExecutionIncomplete"
+                        }
+                    }
+                }
+            }
+        },
+        "emitted_events": [],
+        "forwarded_xcms": []
+    }
+}
