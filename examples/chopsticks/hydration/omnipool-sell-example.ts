@@ -111,6 +111,9 @@ async function getBestSellRoute(alice: any, api: HydrationApi, wsManager: WSMana
 
     // Create the sell transaction with route
     const tx = api.tx.Router.sell(txParams);
+
+    //print tx simulation
+    console.log("Simulation:", await tx.getPaymentInfo(alice));
     
     console.log("Submitting trade transaction...")
     await TransactionService.submitAndWatch(tx, alice, {

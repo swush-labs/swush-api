@@ -1,0 +1,80 @@
+{
+  "type": "Buy",
+  "amountOut": "20000000000",
+  "amountIn": "0",
+  "spotPrice": "0",
+  "tradeFee": "0",
+  "tradeFeePct": null,
+  "priceImpactPct": -100,
+  "swaps": [
+    {
+      "poolAddress": "7JbHiKAaCL5jbgQc2fg5bmTruNZJNGxAM25rEBGCECfVwA69",
+      "pool": "Xyk",
+      "assetIn": "5",
+      "assetOut": "1000019",
+      "assetInDecimals": 10,
+      "assetOutDecimals": 10,
+      "amountOut": "0",
+      "calculatedIn": "0",
+      "amountIn": "0",
+      "spotPrice": "15375.42872685",
+      "tradeFeePct": 0.3,
+      "priceImpactPct": -100,
+      "errors": [
+        "InsufficientTradingAmount"
+      ]
+    },
+    {
+      "poolAddress": "7KLichhV1iczZgSvWcEDhvmmUjcQBcJkqRXUBpYeWBHb11Zs",
+      "pool": "Xyk",
+      "assetIn": "1000019",
+      "assetOut": "1000038",
+      "assetInDecimals": 10,
+      "assetOutDecimals": 4,
+      "amountOut": "0",
+      "calculatedIn": "0",
+      "amountIn": "0",
+      "spotPrice": "328707286.996631185258",
+      "tradeFeePct": 0.3,
+      "priceImpactPct": -100,
+      "errors": [
+        "InsufficientTradingAmount"
+      ]
+    },
+    {
+      "poolAddress": "7NeK45U4gW8MzfRbuyWKLQYmiGbKmk5GxKoVnuNbg5LaVxPE",
+      "pool": "Xyk",
+      "assetIn": "1000038",
+      "assetOut": "0",
+      "assetInDecimals": 4,
+      "assetOutDecimals": 12,
+      "amountOut": "33096359965",
+      "calculatedIn": "0",
+      "amountIn": "0",
+      "spotPrice": "0",
+      "tradeFeePct": 0.3,
+      "priceImpactPct": -100,
+      "errors": [
+        "InsufficientTradingAmount",
+        "MaxOutRatioExceeded"
+      ]
+    },
+    {
+      "poolAddress": "7LnkizyuqVYdpWFragQfTb2GshSTAsoYBfkqsvV1mF3gk1w4",
+      "pool": "Xyk",
+      "assetIn": "0",
+      "assetOut": "1000021",
+      "assetInDecimals": 12,
+      "assetOutDecimals": 10,
+      "amountOut": "20000000000",
+      "calculatedIn": "32997367864",
+      "amountIn": "33096359965",
+      "spotPrice": "16498325591.62711015",
+      "tradeFeePct": 0.3,
+      "priceImpactPct": 0,
+      "errors": [
+        "InsufficientTradingAmount"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "type": "Sell",
+  "amountIn": "5000000",
+  "amountOut": "414021410760203",
+  "spotPrice": "82978831747219.01308450410325206",
+  "tradeFee": "870384359280",
+  "tradeFeePct": 0.21,
+  "tradeFeeRange": [
+    0.22,
+    5.27
+  ],
+  "priceImpactPct": 0,
+  "swaps": [
+    {
+      "poolAddress": "7LVGEVLFXpsCCtnsvhzkSMQARU7gRVCtwMckG7u7d3V6FVvG",
+      "poolId": "102",
+      "pool": "Stableswap",
+      "assetIn": "10",
+      "assetOut": "102",
+      "assetInDecimals": 6,
+      "assetOutDecimals": 18,
+      "amountIn": "5000000",
+      "calculatedOut": "4948623375850447228",
+      "amountOut": "4948134404924570948",
+      "spotPrice": "989724676257461047",
+      "tradeFeePct": 0.02,
+      "priceImpactPct": 0,
+      "errors": []
+    },
+    {
+      "poolAddress": "7L53bUTBbfuj14UpdCNPwmgzzHSsrsTWBHX5pys32mVWM3C1",
+      "pool": "Omnipool",
+      "assetIn": "102",
+      "assetOut": "0",
+      "assetInDecimals": 18,
+      "assetOutDecimals": 12,
+      "amountIn": "4948134404924570948",
+      "calculatedOut": "414850800108528",
+      "amountOut": "414021410760203",
+      "spotPrice": "83840318158980",
+      "tradeFeePct": 0.2,
+      "tradeFeeRange": [
+        0.2,
+        5.25
+      ],
+      "priceImpactPct": 0,
+      "errors": []
+    }
+  ]
+}

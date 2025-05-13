@@ -220,15 +220,15 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
             }
         });
 
-        // const dryRunXcmv1    = await assetHubApi.apis.DryRunApi.dry_run_xcm(
-        //     XcmVersionedLocation.V4({
-        //         parents: 1,
-        //         interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(ASSET_HUB_PARA_ID))
-        //     }),
-        //     message
-        // );
+        const dryRunXcmv1 = await assetHubApi.apis.DryRunApi.dry_run_xcm(
+            XcmVersionedLocation.V4({
+                parents: 1,
+                interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(ASSET_HUB_PARA_ID))
+            }),
+            message
+        );
 
-        // console.log("\n Dry run XCM result 1:", serializeKey(dryRunXcmv1));
+        console.log("\n Dry run XCM result XCM Asset Hub:", serializeKey(dryRunXcmv1));
 
         // Do a dry run to get the actual forwarded messages
         const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
@@ -267,11 +267,11 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
         }
 
         // Extract the XCM message
-        const [_, messages] = targetMessage;
+        const [xcmOrigin, messages] = targetMessage;
         const xcmMessage = messages[0];
 
-        //console.log the xcmMessage
-        //console.log("xcmMessage:", serializeKey(xcmMessage));
+        // console.log the xcmMessage
+        console.log("xcmMessage:", serializeKey(xcmMessage));
 
         // Calculate initial execution fee
         const xcmFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
@@ -279,240 +279,301 @@ async function calculateFees(assetHubApi: TypedApi<typeof polkadot_asset_hub>, h
             dotAssetId
         );
         console.log("Initial execution fee result:", serializeKey(xcmFee));
-        const initialExecutionFee = extractFeeValue(xcmFee);
+        // const initialExecutionFee = extractFeeValue(xcmFee);
 
-        // Calculate delivery fees to HydraDX
-        const deliveryFeesResult = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
+        // // Calculate delivery fees to HydraDX
+        // const deliveryFeesResult = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
+        //     XcmVersionedLocation.V4({
+        //         parents: 1,
+        //         interior: XcmV3Junctions.X1(
+        //             XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+        //         )
+        //     }),
+        //     xcmMessage
+        // );
+        //  console.log("\n dry run xcm on hydraDx");
+        // const dryRunXcm2 = await hydraDxApi.apis.DryRunApi.dry_run_xcm(
+        //     XcmVersionedLocation.V4({
+        //         parents: 1,
+        //         interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(ASSET_HUB_PARA_ID))
+        //     }),
+        //     xcmMessage
+        // );
+        // if (!dryRunXcm2.success) {
+        //     throw new Error("Failed to dry run XCM on HydraDX");
+        // }
+        // console.log("\n Dry run XCM result 2:", serializeKey(dryRunXcm2));
+
+
+        const hdxDryRun = await hydraDxApi.apis.DryRunApi.dry_run_xcm(
             XcmVersionedLocation.V4({
                 parents: 1,
-                interior: XcmV3Junctions.X1(
-                    XcmV3Junction.Parachain(HYDRADX_PARA_ID)
-                )
+                interior: XcmV3Junctions.X1(XcmV3Junction.Parachain(ASSET_HUB_PARA_ID))
             }),
             xcmMessage
         );
-        console.log("\n dry run xcm on hydraDx");
-        const dryRunXcm2 = await hydraDxApi.apis.DryRunApi.dry_run_xcm(
-            XcmVersionedLocation.V4({
-                parents: 1,
-                interior: XcmV3Junctions.Here()
-            }),
-            xcmMessage
-        );
+        console.log("\n Dry hdxDryRun XCM:", serializeKey(hdxDryRun));
+
+        // const remoteXcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(xcmMessage);
+        // if (!remoteXcmWeight.success) {
+        //     throw new Error("Failed to calculate HydraDX execution weight");
+        // }
+        // const txn = hydraDxApi.tx.PolkadotXcm.execute({
+        //     message: xcmMessage,
+        //     max_weight: {
+        //         ref_time: remoteXcmWeight.value.ref_time,
+        //         proof_size: remoteXcmWeight.value.proof_size
+        //     }
+        // });
+
+        // const dryRun2 = await hydraDxApi.apis.DryRunApi.dry_run_call(
+        //     PolkadotRuntimeOriginCaller.system({
+        //         type: "Signed",
+        //         value: ALICE_HYDRATION
+        //     }),
+        //     txn.decodedCall,
+        //     {}
+        // );
+        // console.log("\n Dry run XCM result 3:", serializeKey(dryRun2));
+        /*  
+            const xcmWeightHdx = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(xcmMessage);
+                     if (!xcmWeightHdx.success) {
+                         throw new Error("Failed to calculate total XCM weight");
+                     }
+             
+                      // Create the transaction
+                      const txHdx = assetHubApi.tx.PolkadotXcm.execute({
+                         message: xcmMessage,
+                         max_weight: {
+                             ref_time: xcmWeightHdx.value.ref_time,
+                             proof_size: xcmWeightHdx.value.proof_size
+                         }
+                     });
+             
+                     // Do a dry run to get the actual forwarded messages
+                     const dryRunHdx = await hydraDxApi.apis.DryRunApi.dry_run_call(
+                         PolkadotRuntimeOriginCaller.system({
+                             type: "Signed",
+                             value: ALICE_HYDRATION
+                         }),
+                         tx.decodedCall,
+                         {}
+                     );
+                 
+                     //print with a new line
+                     console.log("\n Dry run XCM result 3:", serializeKey(dryRunHdx)); */
+
+
+        //     const TOTAL_AMOUNT = TRANSFER_AMOUNT + deliveryFees + initialExecutionFee;
+        //     const message_on_hydraDx = XcmVersionedXcm.V4([
+        //         XcmV4Instruction.BuyExecution({
+        //             fees: {
+        //                 id: {
+        //                     parents: 1,
+        //                     interior: XcmV3Junctions.Here()
+        //                 },
+        //                 fun: XcmV3MultiassetFungibility.Fungible(TOTAL_AMOUNT)
+        //             },
+        //             weight_limit: XcmV3WeightLimit.Unlimited()
+        //         }),
+        //         XcmV4Instruction.ExchangeAsset({
+        //             give: XcmV4AssetAssetFilter.Definite([{
+        //                 id: {
+        //                     parents: 1,
+        //                     interior: XcmV3Junctions.Here()
+        //                 },
+        //                 fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
+        //             }]),
+        //             want: [{
+        //                 id: {
+        //                     parents: 1,
+        //                     interior: XcmV3Junctions.X3([
+        //                         XcmV3Junction.Parachain(ASSET_HUB_PARA_ID),
+        //                         XcmV3Junction.PalletInstance(50),
+        //                         XcmV3Junction.GeneralIndex(BigInt(1984))
+        //                     ])
+        //                 },
+        //                 fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000))
+        //             }],
+        //             maximal: true
+        //         }),
+        //         XcmV4Instruction.InitiateReserveWithdraw({
+        //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+        //             reserve: {
+        //                 parents: 1,
+        //                 interior: XcmV3Junctions.X1(
+        //                     XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+        //                 )
+        //             },
+        //             xcm: []
+        //         })
+        //     ]);
+        // // Calculate HydraDX execution fees
+        // const remoteXcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(message_on_hydraDx);
+        // if (!remoteXcmWeight.success) {
+        //     throw new Error("Failed to calculate HydraDX execution weight");
+        // }
+
+        // //dry run on hydraDx first execution then dry run on asset hub
+
+        // const txn = hydraDxApi.tx.PolkadotXcm.execute({
+        //     message: message_on_hydraDx,
+        //     max_weight: {
+        //         ref_time: remoteXcmWeight.value.ref_time,
+        //         proof_size: remoteXcmWeight.value.proof_size
+        //     }
+        // });
+
+        // const dryRun2 = await hydraDxApi.apis.DryRunApi.dry_run_call(
+        //     PolkadotRuntimeOriginCaller.system({
+        //         type: "Signed",
+        //         value: ALICE_HYDRATION
+        //     }),
+        //     txn.decodedCall,
+        //     {}
+        // );
+
+        // const dry_run_xcm = await hydraDxApi.apis.DryRunApi.dry_run_xcm(
+        //     XcmVersionedLocation.V4({
+        //         parents: 0,
+        //         interior: XcmV3Junctions.X1(
+        //             XcmV3Junction.Parachain(HYDRADX_PARA_ID)
+        //         )
+        //     }),
+        //     message_on_hydraDx
+        // )
+
+        // //print dryRun2 into a file
+        // fs.writeFileSync('dryRun2_hydraDx.json', serializeKey(dry_run_xcm));
+
+        // if (dryRun2.success) {
+        //     //check value.execution_result.success
+        //     if (!dryRun2.value.execution_result.success) {
+        //         throw new Error("Dry run failed");
+        //     }
+        // } else {
+        //     throw new Error("Dry run failed");
+        // }
+        /* 
+            const remoteXcmFee = await hydraDxApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+                remoteXcmWeight.value,
+                dotAssetId
+            );
+            console.log("HydraDX execution fee result:", serializeKey(remoteXcmFee));
+            const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
         
-        console.log("\n Dry run XCM result 2:", serializeKey(dryRunXcm2)); 
-        
-
-    //     const TOTAL_AMOUNT = TRANSFER_AMOUNT + deliveryFees + initialExecutionFee;
-    //     const message_on_hydraDx = XcmVersionedXcm.V4([
-    //         XcmV4Instruction.BuyExecution({
-    //             fees: {
-    //                 id: {
-    //                     parents: 1,
-    //                     interior: XcmV3Junctions.Here()
-    //                 },
-    //                 fun: XcmV3MultiassetFungibility.Fungible(TOTAL_AMOUNT)
-    //             },
-    //             weight_limit: XcmV3WeightLimit.Unlimited()
-    //         }),
-    //         XcmV4Instruction.ExchangeAsset({
-    //             give: XcmV4AssetAssetFilter.Definite([{
-    //                 id: {
-    //                     parents: 1,
-    //                     interior: XcmV3Junctions.Here()
-    //                 },
-    //                 fun: XcmV3MultiassetFungibility.Fungible(TRANSFER_AMOUNT)
-    //             }]),
-    //             want: [{
-    //                 id: {
-    //                     parents: 1,
-    //                     interior: XcmV3Junctions.X3([
-    //                         XcmV3Junction.Parachain(ASSET_HUB_PARA_ID),
-    //                         XcmV3Junction.PalletInstance(50),
-    //                         XcmV3Junction.GeneralIndex(BigInt(1984))
-    //                     ])
-    //                 },
-    //                 fun: XcmV3MultiassetFungibility.Fungible(BigInt(5000000))
-    //             }],
-    //             maximal: true
-    //         }),
-    //         XcmV4Instruction.InitiateReserveWithdraw({
-    //             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-    //             reserve: {
-    //                 parents: 1,
-    //                 interior: XcmV3Junctions.X1(
-    //                     XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-    //                 )
-    //             },
-    //             xcm: []
-    //         })
-    //     ]);
-    // // Calculate HydraDX execution fees
-    // const remoteXcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(message_on_hydraDx);
-    // if (!remoteXcmWeight.success) {
-    //     throw new Error("Failed to calculate HydraDX execution weight");
-    // }
-
-    // //dry run on hydraDx first execution then dry run on asset hub
-
-    // const txn = hydraDxApi.tx.PolkadotXcm.execute({
-    //     message: message_on_hydraDx,
-    //     max_weight: {
-    //         ref_time: remoteXcmWeight.value.ref_time,
-    //         proof_size: remoteXcmWeight.value.proof_size
-    //     }
-    // });
-
-    // const dryRun2 = await hydraDxApi.apis.DryRunApi.dry_run_call(
-    //     PolkadotRuntimeOriginCaller.system({
-    //         type: "Signed",
-    //         value: ALICE_HYDRATION
-    //     }),
-    //     txn.decodedCall,
-    //     {}
-    // );
-
-    // const dry_run_xcm = await hydraDxApi.apis.DryRunApi.dry_run_xcm(
-    //     XcmVersionedLocation.V4({
-    //         parents: 0,
-    //         interior: XcmV3Junctions.X1(
-    //             XcmV3Junction.Parachain(HYDRADX_PARA_ID)
-    //         )
-    //     }),
-    //     message_on_hydraDx
-    // )
-
-    // //print dryRun2 into a file
-    // fs.writeFileSync('dryRun2_hydraDx.json', serializeKey(dry_run_xcm));
-
-    // if (dryRun2.success) {
-    //     //check value.execution_result.success
-    //     if (!dryRun2.value.execution_result.success) {
-    //         throw new Error("Dry run failed");
-    //     }
-    // } else {
-    //     throw new Error("Dry run failed");
-    // }
-/* 
-    const remoteXcmFee = await hydraDxApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
-        remoteXcmWeight.value,
-        dotAssetId
-    );
-    console.log("HydraDX execution fee result:", serializeKey(remoteXcmFee));
-    const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
-
-    const v4Instructions = XcmVersionedXcm.V4([
-        XcmV4Instruction.InitiateReserveWithdraw({
-            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-            reserve: {
-                parents: 1,
-                interior: XcmV3Junctions.X1(
-                    XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-                )
-            },
-            xcm: [
-                // Pay for Asset Hub execution with calculated fee
-                XcmV4Instruction.BuyExecution({
-                    fees: {
-                        id: {
-                            parents: 1,
-                            interior: XcmV3Junctions.Here()
-                        },
-                        fun: XcmV3MultiassetFungibility.Fungible(10000000000n)
-                    },
-                    //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
-                    weight_limit: XcmV3WeightLimit.Unlimited()
-                }),
-                XcmV4Instruction.DepositAsset({
+            const v4Instructions = XcmVersionedXcm.V4([
+                XcmV4Instruction.InitiateReserveWithdraw({
                     assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                    beneficiary: {
+                    reserve: {
                         parents: 1,
                         interior: XcmV3Junctions.X1(
-                            XcmV3Junction.AccountId32({
-                                network: undefined,
-                                id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
-                            })
+                            XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
                         )
-                    }
+                    },
+                    xcm: [
+                        // Pay for Asset Hub execution with calculated fee
+                        XcmV4Instruction.BuyExecution({
+                            fees: {
+                                id: {
+                                    parents: 1,
+                                    interior: XcmV3Junctions.Here()
+                                },
+                                fun: XcmV3MultiassetFungibility.Fungible(10000000000n)
+                            },
+                            //weight_limit: XcmV3WeightLimit.Limited(assetHubWeight.value)
+                            weight_limit: XcmV3WeightLimit.Unlimited()
+                        }),
+                        XcmV4Instruction.DepositAsset({
+                            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                            beneficiary: {
+                                parents: 1,
+                                interior: XcmV3Junctions.X1(
+                                    XcmV3Junction.AccountId32({
+                                        network: undefined,
+                                        id: Binary.fromBytes(beneficiaryKeyPair.publicKey)
+                                    })
+                                )
+                            }
+                        })
+                    ]
                 })
-            ]
-        })
-    ]);
-
-    //print the v4Instructions
-    console.log("\n v4Instructions:", serializeKey(v4Instructions));
-
-    // Calculate return delivery fees
-    console.log("\nCalculating return delivery fees...");
-    const returnDeliveryFeesResult = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
-        XcmVersionedLocation.V4({
-            parents: 1,
-            interior: XcmV3Junctions.X1(
-                XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
-            )
-        }),
-        v4Instructions
-    );
-    console.log("Return delivery fees raw result:", serializeKey(returnDeliveryFeesResult));
-    // const returnDeliveryFees = extractFeeValue(returnDeliveryFeesResult);
-    //console.log("Extracted return delivery fees:", returnDeliveryFees.toString());
-    let returnDeliveryFees = 0n;
-    if (returnDeliveryFeesResult.success) {
-        //extract the value from the result
-        const returnDeliveryFeesValue = returnDeliveryFeesResult.value.value[0];
-        if (returnDeliveryFeesValue) {
-            //extract the fees
-            returnDeliveryFees = returnDeliveryFeesValue.fun.value as bigint;
-        }
+            ]);
+        
+            //print the v4Instructions
+            console.log("\n v4Instructions:", serializeKey(v4Instructions));
+        
+            // Calculate return delivery fees
+            console.log("\nCalculating return delivery fees...");
+            const returnDeliveryFeesResult = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
+                XcmVersionedLocation.V4({
+                    parents: 1,
+                    interior: XcmV3Junctions.X1(
+                        XcmV3Junction.Parachain(ASSET_HUB_PARA_ID)
+                    )
+                }),
+                v4Instructions
+            );
+            console.log("Return delivery fees raw result:", serializeKey(returnDeliveryFeesResult));
+            // const returnDeliveryFees = extractFeeValue(returnDeliveryFeesResult);
+            //console.log("Extracted return delivery fees:", returnDeliveryFees.toString());
+            let returnDeliveryFees = 0n;
+            if (returnDeliveryFeesResult.success) {
+                //extract the value from the result
+                const returnDeliveryFeesValue = returnDeliveryFeesResult.value.value[0];
+                if (returnDeliveryFeesValue) {
+                    //extract the fees
+                    returnDeliveryFees = returnDeliveryFeesValue.fun.value as bigint;
+                }
+            }
+            // Calculate final Asset Hub execution fees
+            const finalAssetHubWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(
+                v4Instructions
+            );
+        
+            if (!finalAssetHubWeight.success) {
+                throw new Error("Failed to calculate final Asset Hub execution weight");
+            }
+        
+            const finalAssetHubFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+                finalAssetHubWeight.value,
+                dotAssetId
+            );
+            const finalExecutionFee = extractFeeValue(finalAssetHubFee);
+        
+            //dry run on asset hub
+            const txn2 = assetHubApi.tx.PolkadotXcm.execute({
+                message: v4Instructions,
+                max_weight: {
+                    ref_time: finalAssetHubWeight.value.ref_time,
+                    proof_size: finalAssetHubWeight.value.proof_size
+                }
+            });
+        
+            const dryRun3 = await assetHubApi.apis.DryRunApi.dry_run_call(
+                PolkadotRuntimeOriginCaller.system({
+                    type: "Signed",
+                    value: ALICE
+                }),
+                txn2.decodedCall,
+                {}
+            );
+        
+            //print dryRun3 into a file
+            fs.writeFileSync('dryRun3.json', serializeKey(dryRun3));
+        
+            return {
+                initial_execution: initialExecutionFee,
+                initial_delivery: deliveryFees,
+                hydradx_execution: hydraDxExecutionFee,
+                return_delivery: returnDeliveryFees,
+                final_execution: finalExecutionFee,
+                initial_weight: xcmWeight.value
+            }; */
+    } catch (error) {
+        console.error("Error in calculateFees:", error);
+        throw error;
     }
-    // Calculate final Asset Hub execution fees
-    const finalAssetHubWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(
-        v4Instructions
-    );
-
-    if (!finalAssetHubWeight.success) {
-        throw new Error("Failed to calculate final Asset Hub execution weight");
-    }
-
-    const finalAssetHubFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
-        finalAssetHubWeight.value,
-        dotAssetId
-    );
-    const finalExecutionFee = extractFeeValue(finalAssetHubFee);
-
-    //dry run on asset hub
-    const txn2 = assetHubApi.tx.PolkadotXcm.execute({
-        message: v4Instructions,
-        max_weight: {
-            ref_time: finalAssetHubWeight.value.ref_time,
-            proof_size: finalAssetHubWeight.value.proof_size
-        }
-    });
-
-    const dryRun3 = await assetHubApi.apis.DryRunApi.dry_run_call(
-        PolkadotRuntimeOriginCaller.system({
-            type: "Signed",
-            value: ALICE
-        }),
-        txn2.decodedCall,
-        {}
-    );
-
-    //print dryRun3 into a file
-    fs.writeFileSync('dryRun3.json', serializeKey(dryRun3));
-
-    return {
-        initial_execution: initialExecutionFee,
-        initial_delivery: deliveryFees,
-        hydradx_execution: hydraDxExecutionFee,
-        return_delivery: returnDeliveryFees,
-        final_execution: finalExecutionFee,
-        initial_weight: xcmWeight.value
-    }; */
-} catch (error) {
-    console.error("Error in calculateFees:", error);
-    throw error;
-}
 }
 
 
